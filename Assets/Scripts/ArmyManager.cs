@@ -81,7 +81,7 @@ public class ArmyManager : MonoBehaviour
 	private Vector3[] GetWarBandsDestinations(Vector3 destinationPos, List<GameObject> warBands, bool planned)
 	{
 		Quaternion rotation = GetRotation(destinationPos, warBands, planned);
-		destinationPos.y += .3f;
+		destinationPos.y = 90;
 		Vector3[] nestArray = new Vector3[maxArmySize];
 		Formation.transform.position = destinationPos;
 		Formation.transform.rotation = rotation;

@@ -145,9 +145,15 @@ public class WarBandController1 : MonoBehaviour
 		{
 			if (nest.name.Contains("Nest"))
 			{
+				Vector3 rayCastDirection = Vector3.down;
 				Vector3 nestPos = nest.position;
-				nestArray[i] = nestPos;
-
+				Vector3 hitPosition = Vector3.zero;
+				RaycastHit hit;
+				if (Physics.Raycast(nestPos, rayCastDirection, out hit, Mathf.Infinity))
+				{
+					hitPosition = hit.point;
+				}
+				nestArray[i] = hitPosition;
 				i++;
 			}
 		}
