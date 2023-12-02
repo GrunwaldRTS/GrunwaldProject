@@ -149,6 +149,7 @@ public class WarBandController1 : MonoBehaviour
 				Vector3 nestPos = nest.position;
 				Vector3 hitPosition = Vector3.zero;
 				RaycastHit hit;
+				//using raycasts fired from above to accurately get positions
 				if (Physics.Raycast(nestPos, rayCastDirection, out hit, Mathf.Infinity))
 				{
 					hitPosition = hit.point;
