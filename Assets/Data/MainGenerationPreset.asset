@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac3a916481495404f8ec39e950075c2f, type: 3}
+  m_Name: MainGenerationPreset
+  m_EditorClassIdentifier: 
+  _terrainSize: {x: 3, y: 3}
+  _renderDistance: 2
+  _chunkMaterial: {fileID: 2100000, guid: cb24e0db685bb774ab4bc72d8bc1d99e, type: 2}
+  _levelOfDetail: 0
+  _heightMultiplayer: 20
+  _lakeEndHeight: 0
+  _lakeHeightMultiplayer: 0
+  _noiseInfo:
+    Seed: 100
+    Scale: 150
+    Octaves: 9
+    Lacunarity: 1.48
+    Persistance: 0.638
+    RiversCount: 1
+    RiversWidth: 60
+    RiversHeightCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0.0021652498
+        value: 0.2271455
+        inSlope: 0.3234365
+        outSlope: 0.3234365
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0.5742169
+      - serializedVersion: 3
+        time: 0.15442294
+        value: 0.3613868
+        inSlope: 1.8740462
+        outSlope: 1.8740462
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.7899548
+        outWeight: 0.10678558
+      - serializedVersion: 3
+        time: 0.2978579
+        value: 0.66362363
+        inSlope: 1.2214015
+        outSlope: 1.2214015
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.99993896
+        value: 1.00074
+        inSlope: -0.008232238
+        outSlope: -0.008232238
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.12364744
+        outWeight: 0
+      m_PreInfinity: 0
+      m_PostInfinity: 0
+      m_RotationOrder: 4

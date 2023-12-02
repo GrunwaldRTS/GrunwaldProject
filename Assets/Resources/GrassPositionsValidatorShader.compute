@@ -1,0 +1,24 @@
+#pragma kernel CSMain
+
+struct MeshProperties{
+	float4 position;
+	float2 worldUV;
+};
+
+RWStructuredBuffer<MeshProperties> _Properties;
+RWStructuredBuffer<MeshProperties> _ValidatedProperties;
+
+float _HeightMultiplier;
+int _ChunkDimensionGrassCount, _XTerrainSize, _YTerrainSize;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+ //   if (id.x < uint(_ChunkDimensionGrassCount) && id.y < uint(_ChunkDimensionGrassCount)){
+	//	MeshProperties property = _Properties[id.x + id.y * _ChunkDimensionGrassCount];
+
+	//	if(property.position.y > 11.4f){
+	//		_ValidatedProperties[]
+	//	}
+	//}
+}

@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3062e437ca95b04189cef2c7993f3b8, type: 3}
+  m_Name: MainBiome
+  m_EditorClassIdentifier: 
+  biomeName: FlatTerrain
+  grassesData:
+  - mesh: {fileID: 2949893962580367973, guid: be34da9738a93214fa0ad72c1f827993, type: 3}
+    material: {fileID: 2100000, guid: eaafed4066dd5e146860f87fef97cf47, type: 2}
+    scale: {x: 1, y: 1, z: 1}
+    density: 4
+  treesData:
+  - treePrefab: {fileID: 7335176420224820531, guid: fe0c38f5305f2e14ca7e033eed8192aa,
+      type: 3}
+    amount: 50
+  - treePrefab: {fileID: 2736999718936250401, guid: 3ad58da949d5de343b7c21cee04361ce,
+      type: 3}
+    amount: 50
+  - treePrefab: {fileID: 1973228233241776061, guid: d90c349721b4e694fad80a76d87b2578,
+      type: 3}
+    amount: 50
+  - treePrefab: {fileID: 2478019521095919142, guid: 787d900468610e0488384494dc77d1b1,
+      type: 3}
+    amount: 50
+  - treePrefab: {fileID: 8916932963258096687, guid: ceda9be89f930ac42b32ff5ae10598cd,
+      type: 3}
+    amount: 50
+  - treePrefab: {fileID: 2194115761931273664, guid: 3148b0057757c5e49a1d7284d605de90,
+      type: 3}
+    amount: 70
+  - treePrefab: {fileID: 2975842999505789581, guid: 7b7984f5f0d74ff469fe61d9ca74b14b,
+      type: 3}
+    amount: 70
+  - treePrefab: {fileID: 9095861283202096434, guid: a02abe99b557a624ca2316134bc4a270,
+      type: 3}
+    amount: 70
+  - treePrefab: {fileID: 7617313812345796585, guid: aa4c36c7f93cb1749b6327efd93b83ca,
+      type: 3}
+    amount: 70
+  terrainMaterial: {fileID: 2100000, guid: cb24e0db685bb774ab4bc72d8bc1d99e, type: 2}
