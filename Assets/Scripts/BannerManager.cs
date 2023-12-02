@@ -35,7 +35,7 @@ public class BannerManager : MonoBehaviour
             if (trans.gameObject.name.Contains("Cell"))
             {
                 Renderer renderer = trans.gameObject.GetComponent<Renderer>();
-                Material newMaterial = new Material(renderer.material);
+                Material newMaterial = renderer.material;
 
                 if (healthArray[i] > 100)
                 {
@@ -61,7 +61,6 @@ public class BannerManager : MonoBehaviour
                 {
                     newMaterial.color = Color.black;
                 }
-                renderer.material = newMaterial;
                 i++;
             }
         }
