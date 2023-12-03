@@ -54,9 +54,6 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	}
 	private void Start()
 	{
-		//density /= grassChunkSizeModifier;
-
-		//grassChunkSizeModifier = (int)Mathf.Pow(2, grassChunkSizeModifier);
 		terrainSize = terrainPreset.TerrainSize * terrainPreset.ChunkSize;
 
 		grassChunkSize = terrainPreset.ChunkSize / (float)grassChunkSizeModifier;
@@ -93,7 +90,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		InstantiateTrees(40);
 		//InstantiateBridges(bridgesCount);
 
-		navSurface.BuildNavMesh();
+		//navSurface.BuildNavMesh();
 
 		EventManager.OnChunkMeshesInstanced.Invoke();
 		areMeshesInstanced = true;

@@ -26,10 +26,10 @@ public class AgentController1 : MonoBehaviour
 	private void Update()
     {
         if (!terrainGenerated) return;
-        if (agent.remainingDistance <= agent.stoppingDistance && !agent.pathPending && gotUpdated)
-        {
-            OnDestinationReached();
-        }
+        //if (agent.remainingDistance <= agent.stoppingDistance && !agent.pathPending && gotUpdated)
+        //{
+        //    OnDestinationReached();
+        //}
     }
     IEnumerator Rotator(Quaternion targetRotation)
     {
