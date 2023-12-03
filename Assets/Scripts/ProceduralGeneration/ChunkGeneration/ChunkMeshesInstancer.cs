@@ -90,7 +90,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		InstantiateTrees(40);
 		//InstantiateBridges(bridgesCount);
 
-		//navSurface.BuildNavMesh();
+		navSurface.BuildNavMesh();
 
 		EventManager.OnChunkMeshesInstanced.Invoke();
 		areMeshesInstanced = true;
