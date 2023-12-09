@@ -56,6 +56,10 @@ public class InputManager : Singelton<InputManager>
 	{
 		return input.Player.MouseLeftDown.ReadValue<float>() > 0;
 	}
+    public bool GetLeftClickUp()
+    {
+        return input.Player.MouseLeftUp.triggered;
+    }
 	public Vector2 GetMousePosition()
     {
         return input.Player.MousePosition.ReadValue<Vector2>();

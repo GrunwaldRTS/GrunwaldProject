@@ -78,6 +78,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "MouseLeftUp",
+                    "type": "Button",
+                    "id": "9e5e453c-4591-4d75-ba10-6b7ac381e0dc",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "ShiftKey",
                     "type": "Button",
                     "id": "1bd4a543-b433-4cd7-9405-d962a6b68a58",
@@ -448,6 +457,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "MouseLeftDown",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "339ffb7f-e840-4739-9a0d-70ec4876b08f",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Press(behavior=1)",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MouseLeftUp",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

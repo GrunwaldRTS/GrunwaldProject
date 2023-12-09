@@ -842,6 +842,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rectangleFormationPrefab: {fileID: 4084880726390192412, guid: 15db076a1508fb745b36390d1020ef95,
     type: 3}
+  NestRepPrefab: {fileID: 7573404252945992078, guid: cff1cb8e40d08594c82875d56b2753fe,
+    type: 3}
 --- !u!114 &3436181356207983778
 MonoBehaviour:
   m_ObjectHideFlags: 0
