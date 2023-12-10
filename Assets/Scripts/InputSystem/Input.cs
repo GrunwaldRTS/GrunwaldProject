@@ -91,6 +91,15 @@ public partial class @Input: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
+                    ""name"": ""MouseRightUp"",
+                    ""type"": ""Button"",
+                    ""id"": ""256febb3-44d1-41d9-be91-ccd75c696b1f"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
                     ""name"": ""MouseLeftDown"",
                     ""type"": ""Button"",
                     ""id"": ""00bd79b7-85fc-4c1d-88de-5de43e6bfde6"",
@@ -492,6 +501,17 @@ public partial class @Input: IInputActionCollection2, IDisposable
                     ""action"": ""MouseLeftUp"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""270593cf-53e2-4ec6-8086-8966b6bf185b"",
+                    ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": ""Press(behavior=1)"",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MouseRightUp"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -507,6 +527,7 @@ public partial class @Input: IInputActionCollection2, IDisposable
         m_Player_Rotation = m_Player.FindAction("Rotation", throwIfNotFound: true);
         m_Player_MousePosition = m_Player.FindAction("MousePosition", throwIfNotFound: true);
         m_Player_MouseRightDown = m_Player.FindAction("MouseRightDown", throwIfNotFound: true);
+        m_Player_MouseRightUp = m_Player.FindAction("MouseRightUp", throwIfNotFound: true);
         m_Player_MouseLeftDown = m_Player.FindAction("MouseLeftDown", throwIfNotFound: true);
         m_Player_MouseLeftUp = m_Player.FindAction("MouseLeftUp", throwIfNotFound: true);
         m_Player_ShiftKey = m_Player.FindAction("ShiftKey", throwIfNotFound: true);
@@ -589,6 +610,7 @@ public partial class @Input: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Rotation;
     private readonly InputAction m_Player_MousePosition;
     private readonly InputAction m_Player_MouseRightDown;
+    private readonly InputAction m_Player_MouseRightUp;
     private readonly InputAction m_Player_MouseLeftDown;
     private readonly InputAction m_Player_MouseLeftUp;
     private readonly InputAction m_Player_ShiftKey;
@@ -614,6 +636,7 @@ public partial class @Input: IInputActionCollection2, IDisposable
         public InputAction @Rotation => m_Wrapper.m_Player_Rotation;
         public InputAction @MousePosition => m_Wrapper.m_Player_MousePosition;
         public InputAction @MouseRightDown => m_Wrapper.m_Player_MouseRightDown;
+        public InputAction @MouseRightUp => m_Wrapper.m_Player_MouseRightUp;
         public InputAction @MouseLeftDown => m_Wrapper.m_Player_MouseLeftDown;
         public InputAction @MouseLeftUp => m_Wrapper.m_Player_MouseLeftUp;
         public InputAction @ShiftKey => m_Wrapper.m_Player_ShiftKey;
@@ -658,6 +681,9 @@ public partial class @Input: IInputActionCollection2, IDisposable
             @MouseRightDown.started += instance.OnMouseRightDown;
             @MouseRightDown.performed += instance.OnMouseRightDown;
             @MouseRightDown.canceled += instance.OnMouseRightDown;
+            @MouseRightUp.started += instance.OnMouseRightUp;
+            @MouseRightUp.performed += instance.OnMouseRightUp;
+            @MouseRightUp.canceled += instance.OnMouseRightUp;
             @MouseLeftDown.started += instance.OnMouseLeftDown;
             @MouseLeftDown.performed += instance.OnMouseLeftDown;
             @MouseLeftDown.canceled += instance.OnMouseLeftDown;
@@ -725,6 +751,9 @@ public partial class @Input: IInputActionCollection2, IDisposable
             @MouseRightDown.started -= instance.OnMouseRightDown;
             @MouseRightDown.performed -= instance.OnMouseRightDown;
             @MouseRightDown.canceled -= instance.OnMouseRightDown;
+            @MouseRightUp.started -= instance.OnMouseRightUp;
+            @MouseRightUp.performed -= instance.OnMouseRightUp;
+            @MouseRightUp.canceled -= instance.OnMouseRightUp;
             @MouseLeftDown.started -= instance.OnMouseLeftDown;
             @MouseLeftDown.performed -= instance.OnMouseLeftDown;
             @MouseLeftDown.canceled -= instance.OnMouseLeftDown;
@@ -793,6 +822,7 @@ public partial class @Input: IInputActionCollection2, IDisposable
         void OnRotation(InputAction.CallbackContext context);
         void OnMousePosition(InputAction.CallbackContext context);
         void OnMouseRightDown(InputAction.CallbackContext context);
+        void OnMouseRightUp(InputAction.CallbackContext context);
         void OnMouseLeftDown(InputAction.CallbackContext context);
         void OnMouseLeftUp(InputAction.CallbackContext context);
         void OnShiftKey(InputAction.CallbackContext context);

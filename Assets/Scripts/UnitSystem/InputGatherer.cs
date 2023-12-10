@@ -9,9 +9,13 @@ public class InputGatherer : MonoBehaviour
 	[SerializeField] private Camera mainCam;
 	[SerializeField] private GameObject Army;
 	[SerializeField] private RectTransform boxVisual;
+	[SerializeField] private GameObject ArrowHeadModel;
 	Vector2 boxStartPos;
 	Vector2 boxEndPos;
+	Vector3 originalPos;
+	Quaternion AdjustedRotation;
 	Rect selectionBox;
+	GameObject arrowHeadVisual;
 	ArmyManager armyManager;
 	float SelectedOutlineWidth = 3.5f;
 	void Awake()
@@ -19,6 +23,7 @@ public class InputGatherer : MonoBehaviour
 		armyManager = Army.GetComponent<ArmyManager>();
 		boxEndPos = Vector2.zero;
 		boxStartPos = Vector2.zero;
+		arrowHeadVisual = Instantiate(ArrowHeadModel);
 		DrawBox();
 	}
 
@@ -113,23 +118,43 @@ public class InputGatherer : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
-		if (InputManager.Instance.GetRightClickDown() && !InputManager.Instance.GetShiftHold())
+		if (InputManager.Instance.GetRightClickDown())
 		{
 			Ray MovePosition = mainCam.ScreenPointToRay(InputManager.Instance.GetMousePosition());
 			List<GameObject> warBands = selectedWarbands;
 			if (Physics.Raycast(MovePosition, out var hitInfo, float.MaxValue, LayerMask.GetMask("Ground")))
 			{
-				armyManager.SetArmyDestination(hitInfo.point, warBands);
+				originalPos = hitInfo.point;
 			}
 		}
 
-		if (InputManager.Instance.GetRightClickDown() && InputManager.Instance.GetShiftHold())
+		if (InputManager.Instance.GetRightClickHold())
+        {
+			Ray RotationPosition = Camera.main.ScreenPointToRay(InputManager.Instance.GetMousePosition());
+			if (Physics.Raycast(RotationPosition, out var hitInfo, float.MaxValue, LayerMask.GetMask("Ground")))
+            {
+				Vector3 hitPoint = hitInfo.point;
+				hitPoint.y = 0;
+				Vector3 newOriginalPos = originalPos;
+				newOriginalPos.y = 0;
+				AdjustedRotation = Quaternion.LookRotation((hitPoint - newOriginalPos).normalized);
+				Vector3 newPos = originalPos;
+				newPos.y = newPos.y + 4;
+				arrowHeadVisual.transform.position = newPos;
+				arrowHeadVisual.transform.rotation = AdjustedRotation;
+			}
+		}
+		
+		if (InputManager.Instance.GetRightClickUp())
 		{
-			Ray MovePosition = mainCam.ScreenPointToRay(InputManager.Instance.GetMousePosition());
 			List<GameObject> warBands = selectedWarbands;
-			if (Physics.Raycast(MovePosition, out var hitInfo, float.MaxValue, LayerMask.GetMask("Ground")))
+			if (!InputManager.Instance.GetShiftHold())
 			{
-				armyManager.AddArmyDestinationToQueue(hitInfo.point, warBands);
+				armyManager.SetArmyDestination(originalPos, warBands, AdjustedRotation);
+            }
+            else
+            {
+				armyManager.AddArmyDestinationToQueue(originalPos, warBands, AdjustedRotation);
 			}
 		}
 

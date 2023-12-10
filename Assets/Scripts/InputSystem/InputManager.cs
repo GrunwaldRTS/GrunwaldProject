@@ -48,6 +48,14 @@ public class InputManager : Singelton<InputManager>
     {
         return input.Player.MouseRightDown.triggered;
     }
+    public bool GetRightClickUp()
+    {
+        return input.Player.MouseRightUp.triggered;
+    }
+    public bool GetRightClickHold()
+    {
+        return input.Player.MouseRightDown.ReadValue<float>() > 0;
+    }
     public bool GetLeftClickDown()
     {
         return input.Player.MouseLeftDown.triggered;

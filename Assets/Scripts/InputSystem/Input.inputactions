@@ -69,6 +69,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "MouseRightUp",
+                    "type": "Button",
+                    "id": "256febb3-44d1-41d9-be91-ccd75c696b1f",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "MouseLeftDown",
                     "type": "Button",
                     "id": "00bd79b7-85fc-4c1d-88de-5de43e6bfde6",
@@ -468,6 +477,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "MouseLeftUp",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "270593cf-53e2-4ec6-8086-8966b6bf185b",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "Press(behavior=1)",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MouseRightUp",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

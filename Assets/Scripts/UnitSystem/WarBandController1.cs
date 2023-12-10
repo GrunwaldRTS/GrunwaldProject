@@ -155,7 +155,7 @@ public class WarBandController1 : MonoBehaviour
 				Vector3 hitPosition = Vector3.zero;
 				RaycastHit hit;
 				//using raycasts fired from above to accurately get positions
-				if (Physics.Raycast(nestPos, rayCastDirection, out hit, Mathf.Infinity))
+				if (Physics.Raycast(nestPos, rayCastDirection, out hit, Mathf.Infinity, LayerMask.GetMask("Ground")))
 				{
 					hitPosition = hit.point;
 					GameObject newNestRep = Instantiate(NestRepPrefab, hitPosition, rotation);
