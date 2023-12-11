@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 2426846095409649158}
   - component: {fileID: 1585891862951008675}
   - component: {fileID: 3595789461930143081}
-  - component: {fileID: 5661264871347714069}
   m_Layer: 7
   m_Name: PT_Fruit_Tree_01_stump
   m_TagString: Untagged
@@ -84,19 +83,3 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!208 &5661264871347714069
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3091214299056557244}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 0.619, y: 0.45800003, z: 0.48200002}
-  m_MoveThreshold: 0.1
-  m_Carve: 0
-  m_CarveOnlyStationary: 1
-  m_Center: {x: -0.034, y: 0.16600001, z: -0.051000003}
-  m_TimeToStationary: 0.5

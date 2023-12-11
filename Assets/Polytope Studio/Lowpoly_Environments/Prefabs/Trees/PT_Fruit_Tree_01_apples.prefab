@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 1682916071499944526}
   - component: {fileID: 608239965452645263}
   - component: {fileID: 7232249559389445805}
-  - component: {fileID: 6039380646085683427}
   m_Layer: 7
   m_Name: PT_Fruit_Tree_01_apples_LOD2
   m_TagString: Untagged
@@ -85,20 +84,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &6039380646085683427
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 763320970752340511}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  m_Radius: 0.26
-  m_Height: 3.72
-  m_Direction: 1
-  m_Center: {x: 0, y: 1.34, z: 0}
 --- !u!1 &3879441087148804609
 GameObject:
   m_ObjectHideFlags: 0
@@ -110,7 +95,6 @@ GameObject:
   - component: {fileID: 1843758844416002856}
   - component: {fileID: 6502424996841167214}
   - component: {fileID: 6910044568504622568}
-  - component: {fileID: 354692029983467511}
   m_Layer: 7
   m_Name: PT_Fruit_Tree_01_apples_LOD1
   m_TagString: Untagged
@@ -184,20 +168,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &354692029983467511
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3879441087148804609}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  m_Radius: 0.26
-  m_Height: 3.72
-  m_Direction: 1
-  m_Center: {x: 0, y: 1.34, z: 0}
 --- !u!1 &6904086408796303113
 GameObject:
   m_ObjectHideFlags: 0
@@ -209,7 +179,6 @@ GameObject:
   - component: {fileID: 3090128978895876495}
   - component: {fileID: 3962325514900426}
   - component: {fileID: 3688175341152140935}
-  - component: {fileID: 6662372849873188412}
   m_Layer: 7
   m_Name: PT_Fruit_Tree_01_apples_LOD0
   m_TagString: Untagged
@@ -283,20 +252,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &6662372849873188412
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6904086408796303113}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  m_Radius: 0.26
-  m_Height: 3.72
-  m_Direction: 1
-  m_Center: {x: 0, y: 1.34, z: 0}
 --- !u!1 &7335176420224820531
 GameObject:
   m_ObjectHideFlags: 0
@@ -307,7 +262,6 @@ GameObject:
   m_Component:
   - component: {fileID: 7962391335428833161}
   - component: {fileID: 2943673084578400504}
-  - component: {fileID: 666434321681344595}
   m_Layer: 7
   m_Name: PT_Fruit_Tree_01_apples
   m_TagString: Untagged
@@ -360,19 +314,3 @@ LODGroup:
     renderers:
     - renderer: {fileID: 7232249559389445805}
   m_Enabled: 1
---- !u!208 &666434321681344595
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7335176420224820531}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 0.4, y: 0.4, z: 0.4}
-  m_MoveThreshold: 0.1
-  m_Carve: 0
-  m_CarveOnlyStationary: 1
-  m_Center: {x: 0, y: 0, z: 0}
-  m_TimeToStationary: 0.5
