@@ -21,7 +21,7 @@ MonoBehaviour:
   _lakeHeightMultiplayer: 0
   _noiseInfo:
     Seed: 100
-    Scale: 150
+    Scale: 200
     Octaves: 9
     Lacunarity: 1.48
     Persistance: 0.638

@@ -94,7 +94,7 @@ CapsuleCollider:
   m_GameObject: {fileID: 763320970752340511}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   m_Radius: 0.26
   m_Height: 3.72
   m_Direction: 1
@@ -193,7 +193,7 @@ CapsuleCollider:
   m_GameObject: {fileID: 3879441087148804609}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   m_Radius: 0.26
   m_Height: 3.72
   m_Direction: 1
@@ -292,7 +292,7 @@ CapsuleCollider:
   m_GameObject: {fileID: 6904086408796303113}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   m_Radius: 0.26
   m_Height: 3.72
   m_Direction: 1
@@ -347,15 +347,15 @@ LODGroup:
   m_AnimateCrossFading: 0
   m_LastLODIsBillboard: 0
   m_LODs:
-  - screenRelativeHeight: 0.4997779
+  - screenRelativeHeight: 0.29960647
     fadeTransitionWidth: 0
     renderers:
     - renderer: {fileID: 3688175341152140935}
-  - screenRelativeHeight: 0.2763941
+  - screenRelativeHeight: 0.14041658
     fadeTransitionWidth: 0
     renderers:
     - renderer: {fileID: 6910044568504622568}
-  - screenRelativeHeight: 0.12012339
+  - screenRelativeHeight: 0.04486676
     fadeTransitionWidth: 0
     renderers:
     - renderer: {fileID: 7232249559389445805}

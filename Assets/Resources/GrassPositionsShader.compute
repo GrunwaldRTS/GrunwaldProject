@@ -122,14 +122,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 		pos.x = (id.x - (chunkDimensionGrassCount * 0.5f)) * (1.0f / float(_Density));
 		pos.z = (id.y - (chunkDimensionGrassCount * 0.5f)) * (1.0f / float(_Density));
 
-		pos.x += snoise(float3(pos.xz, 0.0f) * 3.0f) * 2.0f;
-        pos.z += snoise(float3(pos.xz, 0.0f) * 4.0f) * 2.0f;
+		pos.x += snoise(float3(pos.xz, 0.0f) * 3.0f) * 1.5f;
+        pos.z += snoise(float3(pos.xz, 0.0f) * 4.0f) * 1.5f;
 
         int x = floor(id.x) / _Density;
         int y = floor(id.y) / _Density;
 
         float height = _HeightArray[(int)((x + _XOffset) + (y + _YOffset) * _TerrainChunkSize)];
-        pos.y += height.r * _HeightMultiplier + 0.3f;
+        pos.y += height.r * _HeightMultiplier + 0.1f;
 
         float2 worldUV = 0.0f;
         float terrainChunkGrassDimentionCount = terrainChunkSize * _density;
