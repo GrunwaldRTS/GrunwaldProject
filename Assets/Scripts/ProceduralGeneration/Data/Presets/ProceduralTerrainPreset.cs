@@ -11,9 +11,8 @@ public class ProceduralTerrainPreset : ScriptableObject
 	[Header("Chunk")]
 	[SerializeField] Material _chunkMaterial;
 	[SerializeField][Range(0, 6)] int _levelOfDetail;
-	[SerializeField][Range(1f, 100f)] float _heightMultiplayer;
-	[SerializeField][Range(0, 2f)] float _lakeEndHeight;
-	[SerializeField][Range(0, 100f)] float _lakeHeightMultiplayer;
+	[SerializeField][Range(1f, 100f)] float _heightMultiplier;
+	[SerializeField] float _waterLevel;
 	[Header("Noise")]
 	[SerializeField] NoiseInspectorData _noiseInfo;
 
@@ -21,9 +20,8 @@ public class ProceduralTerrainPreset : ScriptableObject
 	public int RenderDistance { get => _renderDistance; }
 	public Material ChunkMaterial { get => _chunkMaterial; }
 	public int LevelOfDetail { get => _levelOfDetail; }
-	public float HeightMultiplayer { get => _heightMultiplayer; }
-	public float LakeEndHeight { get => _lakeEndHeight; }
-    public float LakeHeightMultiplayer { get => _lakeHeightMultiplayer; }
+	public float HeightMultiplier { get => _heightMultiplier; }
+    public float WaterLevel { get => _waterLevel; }
     public NoiseInspectorData NoiseInfo { get => _noiseInfo; }
 	public int ChunkSize { get; } = 238;
 }

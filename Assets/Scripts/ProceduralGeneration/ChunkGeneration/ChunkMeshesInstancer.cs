@@ -91,7 +91,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	}
 	void InitializeComputeShaders()
 	{
-		grassPositionsShader.SetFloat("_HeightMultiplier", terrainPreset.HeightMultiplayer);
+		grassPositionsShader.SetFloat("_HeightMultiplier", terrainPreset.HeightMultiplier);
 		grassPositionsShader.SetInt("_Density", density);
 		grassPositionsShader.SetFloat("_XTerrainDimention", terrainSize.x);
 		grassPositionsShader.SetFloat("_YTerrainDimention", terrainSize.y);
@@ -136,10 +136,10 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 		CalculateGrassPositions();
 		InstantiateTrees(40);
-		GenerateVillages(5, 15, 200, 35);
+		//GenerateVillages(5, 15, 200, 35);
 		//InstantiateBridges(bridgesCount);
 
-		navSurface.BuildNavMesh();
+		//navSurface.BuildNavMesh();
 
 		EventManager.OnChunkMeshesInstanced.Invoke();
 		areMeshesInstanced = true;
@@ -174,7 +174,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 								chunkOffset.y -= terrainPreset.ChunkSize / 2f;
 
 								Vector2 chunkPosition = new Vector2(position.x + chunkOffset.x, position.y + chunkOffset.y);
-								Bounds bounds = new(new Vector3(chunkPosition.x, 0, chunkPosition.y), new Vector3(grassChunkSizeRounded + 5, terrainPreset.HeightMultiplayer, grassChunkSizeRounded + 5));
+								Bounds bounds = new(new Vector3(chunkPosition.x, 0, chunkPosition.y), new Vector3(grassChunkSizeRounded + 5, terrainPreset.HeightMultiplier, grassChunkSizeRounded + 5));
 
 								Material material = new(grassData.material);
 								Chunk chunk = chunks[position];

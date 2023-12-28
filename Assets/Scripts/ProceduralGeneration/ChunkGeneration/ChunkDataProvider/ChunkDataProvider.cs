@@ -13,20 +13,16 @@ public class ChunkDataProvider
     public NoiseInputData NoiseData { get; private set; }
     //mesh
     public MeshInputData MeshData { get; private set; }
-    public float LakeEndHeight { get; private set; }
-    public float LakeHeightMultiplier { get; private set; }
     //threading
     public int ChunkCount { get; private set; }
     public Vector2Int[] RiversPoints { get; private set; }
     public Dictionary<Vector2Int, float> GlobalHeightMap { get; set; }
 
     Queue<ThreadInfo<MeshNoisePair, Mesh, float[,]>> meshActionPairsQueue = new();
-    public ChunkDataProvider(NoiseInputData noiseData, MeshInputData meshData, float lakeEndHeight, float lakeHeightMultiplier)
+    public ChunkDataProvider(NoiseInputData noiseData, MeshInputData meshData)
     {
         NoiseData = noiseData;
         MeshData = meshData;
-		LakeEndHeight = lakeEndHeight;
-        LakeHeightMultiplier = lakeHeightMultiplier;
 
         new GameObject("CDPUpdate").AddComponent<CDPUpdate>().CDP = this;
 
@@ -47,7 +43,7 @@ public class ChunkDataProvider
                     new ThreadInfo<MeshNoisePair, Mesh, float[,]>
 					{
                         RequestedData = new (
-                            MeshGenerator.GenerateTerrainChunkData(new MeshInputData(MeshData.Size, NoiseData.LevelOfDetail, heightMap2, MeshData.HeightMultiplier), LakeEndHeight, LakeHeightMultiplier),
+                            MeshGenerator.GenerateTerrainChunkData(new MeshInputData(MeshData.Size, NoiseData.LevelOfDetail, heightMap2, MeshData.HeightMultiplier)),
                             heightMap2
                             ),
                         CallBack = callback

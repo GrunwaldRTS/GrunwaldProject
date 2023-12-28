@@ -23,10 +23,8 @@ public class ProceduralTerrain : MonoBehaviour
 		Application.targetFrameRate = 240;
 
 		chunkDataProvider = new ChunkDataProvider(
-			new NoiseInputData(preset.TerrainSize, preset.ChunkSize + 1, preset.LevelOfDetail, preset.HeightMultiplayer, preset.NoiseInfo),
-			new MeshInputData(preset.ChunkSize, preset.LevelOfDetail, new float[0, 0], preset.HeightMultiplayer),
-			preset.LakeEndHeight,
-			preset.LakeHeightMultiplayer
+			new NoiseInputData(preset.TerrainSize, preset.ChunkSize + 1, preset.LevelOfDetail, preset.HeightMultiplier, preset.NoiseInfo),
+			new MeshInputData(preset.ChunkSize, preset.LevelOfDetail, new float[0, 0], preset.HeightMultiplier)
 		);
 
 		EventManager.OnChunkGenerationCompleated.AddListener(OnChunkLoaded);
