@@ -5,6 +5,7 @@ using UnityEngine;
 public class WarBandController1 : MonoBehaviour
 {
 	[SerializeField] GameObject rectangleFormationPrefab;
+	[SerializeField] GameObject NestRepPrefab;
 	public int Capacity { get; private set; } = 10;
 	public char GroupID { get; set; } = ' ';
 
@@ -41,6 +42,10 @@ public class WarBandController1 : MonoBehaviour
 		GroupID = id;
 		warbandBanner.GetComponent<BannerManager>().SetGroupIdDisplay(id);
 	}
+	public Vector3 GetBannerPosition()
+    {
+		return warbandBanner.transform.position;
+    }
 
 	GameObject[] GetWarriorsInWarBand()
 	{
@@ -77,7 +82,7 @@ public class WarBandController1 : MonoBehaviour
 	{
 		float distanceToCamera = Vector3.Distance(warbandBanner.transform.position, mainCamera.transform.position);
 		float newScale = 0.4f + distanceToCamera * BannerScaleMultiplier;
-		float upwardMovement = 36 + distanceToCamera * BannerUpwardSpeed;
+		float upwardMovement = 30 + distanceToCamera * BannerUpwardSpeed;
 		warbandBanner.transform.position = new Vector3(GetWarriorsPosition().x, upwardMovement, GetWarriorsPosition().z);
 		warbandBanner.transform.localScale = new Vector3(newScale, newScale, newScale);
 		Vector3 directionToCamera = (mainCamera.transform.position - warbandBanner.transform.position).normalized;
@@ -150,9 +155,10 @@ public class WarBandController1 : MonoBehaviour
 				Vector3 hitPosition = Vector3.zero;
 				RaycastHit hit;
 				//using raycasts fired from above to accurately get positions
-				if (Physics.Raycast(nestPos, rayCastDirection, out hit, Mathf.Infinity))
+				if (Physics.Raycast(nestPos, rayCastDirection, out hit, Mathf.Infinity, LayerMask.GetMask("Ground")))
 				{
 					hitPosition = hit.point;
+					GameObject newNestRep = Instantiate(NestRepPrefab, hitPosition, rotation);
 				}
 				nestArray[i] = hitPosition;
 				i++;

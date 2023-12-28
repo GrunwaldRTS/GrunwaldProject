@@ -69,9 +69,27 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "MouseRightUp",
+                    "type": "Button",
+                    "id": "256febb3-44d1-41d9-be91-ccd75c696b1f",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "MouseLeftDown",
                     "type": "Button",
                     "id": "00bd79b7-85fc-4c1d-88de-5de43e6bfde6",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MouseLeftUp",
+                    "type": "Button",
+                    "id": "9e5e453c-4591-4d75-ba10-6b7ac381e0dc",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -448,6 +466,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "MouseLeftDown",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "339ffb7f-e840-4739-9a0d-70ec4876b08f",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Press(behavior=1)",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MouseLeftUp",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "270593cf-53e2-4ec6-8086-8966b6bf185b",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "Press(behavior=1)",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MouseRightUp",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

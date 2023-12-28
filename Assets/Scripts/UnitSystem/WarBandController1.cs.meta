@@ -6,6 +6,8 @@ MonoImporter:
   defaultReferences:
   - rectangleFormationPrefab: {fileID: 4084880726390192412, guid: 15db076a1508fb745b36390d1020ef95,
       type: 3}
+  - NestRepPrefab: {fileID: 7843983065588720908, guid: c08f6e3a15a5e0f4ea50de25d0be303a,
+      type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
