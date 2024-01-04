@@ -19,9 +19,6 @@ MonoBehaviour:
     scale: {x: 0.5, y: 0.5, z: 0.5}
     density: 1
   treesData:
-  - treePrefab: {fileID: 7335176420224820531, guid: fe0c38f5305f2e14ca7e033eed8192aa,
-      type: 3}
-    amount: 50
   - treePrefab: {fileID: 2736999718936250401, guid: 3ad58da949d5de343b7c21cee04361ce,
       type: 3}
     amount: 50
