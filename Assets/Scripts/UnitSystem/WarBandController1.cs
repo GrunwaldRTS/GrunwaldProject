@@ -8,11 +8,13 @@ public class WarBandController1 : MonoBehaviour
 	[SerializeField] GameObject NestRepPrefab;
 	public int Capacity { get; private set; } = 10;
 	public char GroupID { get; set; } = ' ';
-
+	public int ArmyId { get; private set; }
+	public int AttackMode { get; set; } = 1;
 	Camera mainCamera;
-	GameObject[] warriors;
+	List<GameObject> warriors;
 	GameObject formation;
 	GameObject warbandBanner;
+	GameObject army;
 	Coroutine FinishedPathDetectorCoroutine;
 	bool coroutineFinished = true;
 
@@ -23,19 +25,67 @@ public class WarBandController1 : MonoBehaviour
 	{
 		public Vector3 Position { get; set; }
 		public Quaternion Rotation { get; set; }
-		public DestinationQueue(Vector3 pos, Quaternion rot)
+		public bool isAttack { get; set; }
+		public GameObject warbandToAttack { get; set; }
+		public DestinationQueue(Vector3 pos, Quaternion rot, bool type = false, GameObject warband = null)
 		{
 			Position = pos;
 			Rotation = rot;
+			isAttack = type;
+			warbandToAttack = warband;
 		}
 	}
-	private void Awake()
+
+    void OnMouseEnter()
+    {
+		Debug.Log("mouse entered");
+		Outline script = transform.gameObject.GetComponent<Outline>();
+		if (script.OutlineWidth == 3.5f)
+		{
+			script.OutlineWidth = 4f;
+		}
+		else
+		{
+			script.OutlineWidth = 2f;
+		}
+	}
+
+	void OnMouseExit()
+    {
+		Outline script = transform.gameObject.GetComponent<Outline>();
+		if (script.OutlineWidth == 4f)
+		{
+			script.OutlineWidth = 3.5f;
+		}
+		else
+		{
+			script.OutlineWidth = 0f;
+		}
+	}
+
+    private void Awake()
 	{
 		mainCamera = Camera.main;
 		warriors = GetWarriorsInWarBand();
-
+		army = transform.parent.gameObject;
+		ArmyId = army.GetComponent<ArmyManager>().ArmyId;
 		formation = Instantiate(rectangleFormationPrefab);
 	}
+	public void GettingAttacked(GameObject warband)
+    {
+		int fightingWarriors = 0;
+		foreach(GameObject warrior in warriors)
+        {
+            if (warrior.GetComponent<AgentController1>().isAttacking)
+            {
+				fightingWarriors++;
+            }
+        }
+		if(fightingWarriors <= 5)
+        {
+			AttackWarband(warband);
+        }
+    }
 
 	public void SetGroupID(char id)
 	{
@@ -47,16 +97,16 @@ public class WarBandController1 : MonoBehaviour
 		return warbandBanner.transform.position;
     }
 
-	GameObject[] GetWarriorsInWarBand()
+	List<GameObject> GetWarriorsInWarBand()
 	{
-		warriors = new GameObject[Capacity];
+		warriors = new List<GameObject>();
 
 		int i = 0;
 		foreach (Transform trans in transform)
 		{
 			if (trans.gameObject.name.Contains("Warrior"))
 			{
-				warriors[i] = trans.gameObject;
+				warriors.Add(trans.gameObject);
 				i++;
 			}
 			else if (trans.gameObject.name.Contains("Banner"))
@@ -67,31 +117,74 @@ public class WarBandController1 : MonoBehaviour
 
 		return warriors;
 	}
+	public List<GameObject> GetWarriorsInWarBandByDistance(GameObject warband, Vector3 pos)
+	{
+		List<GameObject> warriorsByDistance = warband.GetComponent<WarBandController1>().GetWarriorsInWarBand();
+		int n = warriorsByDistance.Count;
+		for (int i = 0; i < n; i++)
+		{
+			for (int j = 0; j < n-1; j++)
+			{
+				float distanceX = Vector3.Distance(transform.position, warriorsByDistance[j].transform.position); 
+				float distanceY = Vector3.Distance(transform.position, warriorsByDistance[j + 1].transform.position);
+
+				// Swap warriors if they are out of order
+				if (distanceX > distanceY)
+				{
+					GameObject temp = warriorsByDistance[j];
+					warriorsByDistance[j] = warriorsByDistance[j + 1];
+					warriorsByDistance[j + 1] = temp;
+				}
+			}
+		}
+		return warriorsByDistance;
+	}
 	private void Update()
 	{
 		HoldBanner();
 		warbandBanner.GetComponent<BannerManager>().SetHealthBar(GetHealthInfo());
 		if (!IsMarching() && destinationQueue.Count > 0)
 		{
-			MoveFormation(destinationQueue[0].Position, destinationQueue[0].Rotation);
+            if (destinationQueue[0].isAttack)
+            {
+				AttackWarband(destinationQueue[0].warbandToAttack);
+            }
+            else
+            {
+				MoveFormation(destinationQueue[0].Position, destinationQueue[0].Rotation);
+			}
+			
 			destinationQueue.RemoveAt(0);
 		}
+		int fallenWarriors = 0;
+		foreach(GameObject warrior in warriors)
+        {
+			if (!warrior.GetComponent<AgentController1>().isAlive)
+            {
+				fallenWarriors++;
+            }
+        }
+		if(fallenWarriors == Capacity)
+        {
+			Destroy(transform.gameObject);
+        }
+
 	}
 
 	public void HoldBanner(float BannerScaleMultiplier = .001f, float BannerUpwardSpeed = .001f)
 	{
 		float distanceToCamera = Vector3.Distance(warbandBanner.transform.position, mainCamera.transform.position);
 		float newScale = 0.4f + distanceToCamera * BannerScaleMultiplier;
-		float upwardMovement = 30 + distanceToCamera * BannerUpwardSpeed;
+		float upwardMovement = GetWarriorsPosition().y + distanceToCamera * BannerUpwardSpeed + 10;
 		warbandBanner.transform.position = new Vector3(GetWarriorsPosition().x, upwardMovement, GetWarriorsPosition().z);
 		warbandBanner.transform.localScale = new Vector3(newScale, newScale, newScale);
 		Vector3 directionToCamera = (mainCamera.transform.position - warbandBanner.transform.position).normalized;
 		Quaternion newRotation = Quaternion.LookRotation(directionToCamera);
 		warbandBanner.transform.rotation = newRotation;
 	}
-	public int[] GetHealthInfo()
+	public float[] GetHealthInfo()
 	{
-		int[] healthArr = new int[Capacity];
+		float[] healthArr = new float[Capacity];
 		int i = 0;
 		foreach (GameObject warrior in warriors)
 		{
@@ -99,6 +192,7 @@ public class WarBandController1 : MonoBehaviour
 			i++;
 		}
 		System.Array.Sort(healthArr);
+		System.Array.Reverse(healthArr);
 		return healthArr;
 	}
 	public void SetDestination(Vector3 pos, Quaternion rotation)
@@ -111,9 +205,29 @@ public class WarBandController1 : MonoBehaviour
 		}
 		MoveFormation(pos, rotation);
 	}
+	public void AttackWarband(GameObject enemyWarband)
+    {
+		List<GameObject> enemyWarriors = GetWarriorsInWarBandByDistance(enemyWarband,GetWarriorsPosition());
+		int n = enemyWarriors.Count;
+		for (int i = 0; i < warriors.Count; i++)
+        {
+			if(i >= (n / 2) && AttackMode == 1)
+            {
+				warriors[i].GetComponent<AgentController1>().Attack(enemyWarriors[i - 5]);
+            }
+            else
+            {
+				warriors[i].GetComponent<AgentController1>().Attack(enemyWarriors[i]);
+			}
+        }
+	}
 	public void AddPositionToQueue(Vector3 pos, Quaternion rotation)
 	{
 		destinationQueue.Add(new DestinationQueue(pos, rotation));
+	}
+	public void AddAttackToQueue(GameObject warband)
+	{
+		destinationQueue.Add(new DestinationQueue(Vector3.zero,Quaternion.identity,true,warband));
 	}
 	public Vector3 GetWarriorsPosition()
 	{
@@ -126,7 +240,7 @@ public class WarBandController1 : MonoBehaviour
 			positionSum += warrior.transform.position;
 		}
 
-		positionSum /= warriors.Length;
+		positionSum /= warriors.Count;
 
 		return positionSum;
 	}
@@ -185,6 +299,7 @@ public class WarBandController1 : MonoBehaviour
 		Debug.Log("destination reached");
 		coroutineFinished = true;
 	}
+
 	public void MoveFormation(Vector3 destinationPos, Quaternion rotation)
 	{
 

@@ -18,12 +18,17 @@ public class InputGatherer : MonoBehaviour
 	GameObject arrowHeadVisual;
 	ArmyManager armyManager;
 	float SelectedOutlineWidth = 3.5f;
+	int armyId;
+	bool isAttack;
+	GameObject enemyBand;
 	void Awake()
 	{
 		armyManager = Army.GetComponent<ArmyManager>();
 		boxEndPos = Vector2.zero;
 		boxStartPos = Vector2.zero;
 		arrowHeadVisual = Instantiate(ArrowHeadModel);
+		armyId = armyManager.ArmyId;
+
 		DrawBox();
 	}
 
@@ -68,10 +73,9 @@ public class InputGatherer : MonoBehaviour
 
 	private void SelectWarband(GameObject warband)
 	{
-		warband.GetComponent<Outline>().OutlineWidth = SelectedOutlineWidth;
-
-		if (!selectedWarbands.Contains(warband))
+		if (!selectedWarbands.Contains(warband) && warband.GetComponent<WarBandController1>().ArmyId == armyId)
 		{
+			warband.GetComponent<Outline>().OutlineWidth = SelectedOutlineWidth;
 			selectedWarbands.Add(warband);
 		}
 	}
@@ -115,16 +119,35 @@ public class InputGatherer : MonoBehaviour
 
 	}
 
+
+
 	// Update is called once per frame
 	void Update()
 	{
 		if (InputManager.Instance.GetRightClickDown())
 		{
 			Ray MovePosition = mainCam.ScreenPointToRay(InputManager.Instance.GetMousePosition());
-			List<GameObject> warBands = selectedWarbands;
-			if (Physics.Raycast(MovePosition, out var hitInfo, float.MaxValue, LayerMask.GetMask("Ground")))
-			{
-				originalPos = hitInfo.point;
+			if (Physics.Raycast(MovePosition, out var hitInfo2, float.MaxValue))
+            {
+				GameObject hitObject = hitInfo2.collider.gameObject;
+				if (hitObject.name.Contains("Banner") || hitObject.name.Contains("Warrior"))
+				{
+					GameObject parentObj = GetParentObj(hitObject);
+					GameObject parentArmy = GetParentObj(parentObj);
+					if (parentArmy.GetComponent<ArmyManager>().ArmyId != armyId)
+                    {
+						isAttack = true;
+						enemyBand = parentObj;
+					}
+                    else
+                    {
+						Debug.Log("Friendly");
+					}
+				}
+				else if (Physics.Raycast(MovePosition, out var hitInfo, float.MaxValue, LayerMask.GetMask("Ground")))
+				{
+					originalPos = hitInfo.point;
+				}
 			}
 		}
 
@@ -147,14 +170,31 @@ public class InputGatherer : MonoBehaviour
 		
 		if (InputManager.Instance.GetRightClickUp())
 		{
-			List<GameObject> warBands = selectedWarbands;
-			if (!InputManager.Instance.GetShiftHold())
+			if (!isAttack)
 			{
-				armyManager.SetArmyDestination(originalPos, warBands, AdjustedRotation);
+				if (!InputManager.Instance.GetShiftHold())
+				{
+					armyManager.SetArmyDestination(originalPos, selectedWarbands, AdjustedRotation);
+				}
+				else
+				{
+					
+					armyManager.AddArmyDestinationToQueue(originalPos, selectedWarbands, AdjustedRotation);
+				}
             }
             else
             {
-				armyManager.AddArmyDestinationToQueue(originalPos, warBands, AdjustedRotation);
+				if (!InputManager.Instance.GetShiftHold())
+				{
+					armyManager.SetArmyAttack(enemyBand, selectedWarbands);
+                }
+                else
+                {
+					Debug.Log("added attack to queue");
+					armyManager.AddArmyAttackToQueue(enemyBand, selectedWarbands);
+				}
+
+				isAttack = false;
 			}
 		}
 
@@ -246,13 +286,13 @@ public class InputGatherer : MonoBehaviour
 				Debug.Log(clicked);
 				if (clicked)
 				{
-					Debug.Log($"clicked {i}");
+
 					SetSelecdtedWarBandsGroupID(charDigit);
 				}
 			}
 			else if (clicked)
 			{
-				Debug.Log($"clicked {i}");
+
 				SelectWarbandsByGroupID(charDigit);
 			}
 

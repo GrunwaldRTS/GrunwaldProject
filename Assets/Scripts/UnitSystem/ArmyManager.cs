@@ -7,17 +7,26 @@ public class ArmyManager : MonoBehaviour
 	[SerializeField] GameObject rectangleArmyFormationPrefab;
 	GameObject Formation;
 	int maxArmySize = 10;
+	public List<GameObject> ArmyWarBands { get; private set; }
+	public int ArmyId;
 
 	void Awake()
 	{
 		Formation = Instantiate(rectangleArmyFormationPrefab);
 	}
-	public List<GameObject> GetAllWarbands()
+    private void Update()
+    {
+		ArmyWarBands = GetAllWarbands();
+    }
+    public List<GameObject> GetAllWarbands()
 	{
 		List<GameObject> allWarbands = new List<GameObject>();
 		foreach (Transform trans in transform)
 		{
-			allWarbands.Add(trans.gameObject);
+            if (trans.gameObject.name.Contains("WarBand"))
+            {
+				allWarbands.Add(trans.gameObject);
+			}
 		}
 		return allWarbands;
 	}
@@ -30,6 +39,25 @@ public class ArmyManager : MonoBehaviour
 			WarBandController1 warBandController = warBand.GetComponent<WarBandController1>();
 			warBandController.SetDestination(nestPositions[i], GetRotation(destinationPos, warBands, false));
 			i++;
+		}
+	}
+
+	public void SetArmyAttack(GameObject enemyWarband, List<GameObject> warBands)
+    {
+		foreach (GameObject warBand in warBands)
+		{
+			WarBandController1 warBandController = warBand.GetComponent<WarBandController1>();
+			warBandController.AttackWarband(enemyWarband);
+		}
+	}
+
+	public void AddArmyAttackToQueue(GameObject enemyWarband, List<GameObject> warBands)
+	{
+		foreach (GameObject warBand in warBands)
+		{
+			WarBandController1 warBandController = warBand.GetComponent<WarBandController1>();
+			warBandController.AddAttackToQueue(enemyWarband);
+			Debug.Log("added attack");
 		}
 	}
 
