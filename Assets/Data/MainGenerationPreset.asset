@@ -16,12 +16,11 @@ MonoBehaviour:
   _renderDistance: 2
   _chunkMaterial: {fileID: 2100000, guid: cb24e0db685bb774ab4bc72d8bc1d99e, type: 2}
   _levelOfDetail: 0
-  _heightMultiplayer: 20
-  _lakeEndHeight: 0
-  _lakeHeightMultiplayer: 0
+  _heightMultiplier: 21
+  _waterLevel: 12
   _noiseInfo:
     Seed: 100
-    Scale: 150
+    Scale: 200
     Octaves: 9
     Lacunarity: 1.48
     Persistance: 0.638

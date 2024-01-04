@@ -16,8 +16,8 @@ MonoBehaviour:
   grassesData:
   - mesh: {fileID: 2949893962580367973, guid: be34da9738a93214fa0ad72c1f827993, type: 3}
     material: {fileID: 2100000, guid: eaafed4066dd5e146860f87fef97cf47, type: 2}
-    scale: {x: 1, y: 1, z: 1}
-    density: 4
+    scale: {x: 0.5, y: 0.5, z: 0.5}
+    density: 1
   treesData:
   - treePrefab: {fileID: 7335176420224820531, guid: fe0c38f5305f2e14ca7e033eed8192aa,
       type: 3}
@@ -47,3 +47,10 @@ MonoBehaviour:
       type: 3}
     amount: 70
   terrainMaterial: {fileID: 2100000, guid: cb24e0db685bb774ab4bc72d8bc1d99e, type: 2}
+  heights:
+  - startHeight: 12.5
+    endHeight: 13.4
+    color: {r: 0.46666667, g: 0.44273105, b: 0.19215688, a: 0}
+  - startHeight: 13.5
+    endHeight: 60
+    color: {r: 0.015384612, g: 0.08, b: 0.015384612, a: 0}

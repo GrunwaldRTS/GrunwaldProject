@@ -19,7 +19,6 @@ struct Interpolators {
 	float3 shapeNormalWS : TEXCOORD2;
 	float3 positionWS : TEXCOORD3;
 	float2 uv : TEXCOORD4;
-	float3 viewDirWS : TEXCOORD5;
 	float fogFactor : TEXCOORD6;
 	DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 7);
 	float2 worldUV : TEXCOORD8;
@@ -66,7 +65,6 @@ Interpolators Vertex(Attributes input, uint instanceID : SV_InstanceID) {
 
 	output.positionCS = posnInputs.positionCS;
 	output.positionWS = posnInputs.positionWS;
-	output.viewDirWS = normalize(_WorldSpaceCameraPos - output.positionWS);
 	output.meshNormalWS = normInputs.normalWS;
 	output.meshBiTangentWS = normInputs.bitangentWS;
 	output.uv = input.uv;
@@ -85,6 +83,8 @@ float3 Fragment(Interpolators input, FRONT_FACE_TYPE frontFace : FRONT_FACE_SEMA
 	float3 meshNormalWS = input.meshNormalWS;
 	meshNormalWS *= IS_FRONT_VFACE(frontFace, 1, -1);
 
+	float3 viewDirWS = normalize(_WorldSpaceCameraPos - input.positionWS);
+
 	float3 albedo = lerp(_BottomColor, _TopColor, input.uv.y);
 	//albedo = float3(input.worldUV.r, input.worldUV.g, 0);
 	//albedo = _Albedo;
@@ -94,7 +94,7 @@ float3 Fragment(Interpolators input, FRONT_FACE_TYPE frontFace : FRONT_FACE_SEMA
 	lightingData.positionWS = input.positionWS;
 	lightingData.meshNormalWS = meshNormalWS;
 	lightingData.shapeNormalWS = input.meshBiTangentWS;
-	lightingData.viewDirectionWS = input.viewDirWS;
+	lightingData.viewDirectionWS = viewDirWS;
 	lightingData.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
 
 	lightingData.albedo = albedo;

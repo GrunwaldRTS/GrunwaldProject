@@ -50,7 +50,7 @@ public static class MeshGenerator
 		
 		return mesh;
 	}
-	public static MeshData GenerateTerrainChunkData(MeshInputData meshInputData, float lakeEndHeight, float lakeHeightMultiplie)
+	public static MeshData GenerateTerrainChunkData(MeshInputData meshInputData)
     {
 		int meshSimplificationIncrement = meshInputData.LevelOfDetail == 0? 1 : meshInputData.LevelOfDetail * 2;
 

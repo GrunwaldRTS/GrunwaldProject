@@ -1,7 +1,9 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using Unity.AI.Navigation;
+using UnityEditor.Presets;
+using System.Linq;
+
 public class ChunkMeshesInstancer : MonoBehaviour
 {
 	[Header("MeshInstancing")]
@@ -11,6 +13,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	[SerializeField] GameObject bridgePrefab;
 	[SerializeField][Range(1, 6)] int bridgesCount = 3;
 	[Header("Grass")]
+	[SerializeField] float grassHeightThreshold = 12f;
 	[SerializeField][Range(1, 8)] int grassChunkSizeModifier = 4;
 	[SerializeField][Range(1, 8)] int density = 4;
 	[SerializeField] float windSpeed = 1f;
@@ -22,10 +25,18 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
     ComputeShader grassPositionsShader;
 	ComputeShader animationMapShader;
+	ComputeShader cullGrassUnderWaterShader;
 
+	ComputeBuffer voteBuffer;
+	ComputeBuffer prescanBuffer;
+	ComputeBuffer groupSumBuffer;
+	ComputeBuffer offsetBuffer;
+
+	ChunkDataProvider chunkDataProvider;
 	Dictionary<Vector2Int, float> globalHeightMap;
 	Dictionary<Vector2Int, Chunk> chunks;
 	Dictionary<string, Dictionary<Vector2, GrassData>> grassesData = new();
+	List<GameObject> trees = new();
 	Vector2Int[] riversPoints;
 	int animationTextureResolution = 1024;
 
@@ -37,16 +48,28 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	int grassChunkGrassCount;
 	int grassChunksPerTerrainChunk;
 
+	int prescanThreadCount;
+	int prescanThreadBlocksCount;
+	int groupSumScanThreadBlocksCount;
+	int compactThreadBlocksCount;
+
 	NavMeshSurface navSurface;
 
 	List<ComputeBuffer> propertiesBuffers = new();
 	List<ComputeBuffer> argsBuffers = new();
+
+	enum TerrainCheckType
+	{
+		circular,
+		rectangular
+	}
 
 	private void Awake()
 	{
 		navSurface = GetComponent<NavMeshSurface>();
 		grassPositionsShader = Resources.Load<ComputeShader>("GrassPositionsShader");
 		animationMapShader = Resources.Load<ComputeShader>("AnimationMapShader");
+		cullGrassUnderWaterShader = Resources.Load<ComputeShader>("CullGrassUnderWaterShader");
 
 		animationTexture = new(animationTextureResolution, animationTextureResolution, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
 		animationTexture.enableRandomWrite = true;
@@ -68,7 +91,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	}
 	void InitializeComputeShaders()
 	{
-		grassPositionsShader.SetFloat("_HeightMultiplier", terrainPreset.HeightMultiplayer);
+		grassPositionsShader.SetFloat("_HeightMultiplier", terrainPreset.HeightMultiplier);
 		grassPositionsShader.SetInt("_Density", density);
 		grassPositionsShader.SetFloat("_XTerrainDimention", terrainSize.x);
 		grassPositionsShader.SetFloat("_YTerrainDimention", terrainSize.y);
@@ -79,15 +102,41 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 		animationMapShader.SetTexture(0, "_AnimationMap", animationTexture);
 		animationMapShader.SetInt("_Resolution", animationTextureResolution);
+
+		prescanThreadCount = 0;
+		int grassCountCopy = grassChunkGrassCount / 2;
+
+		while(grassCountCopy > 0 )
+		{
+			prescanThreadCount += 64;
+			grassCountCopy -= 64;
+		}
+
+		prescanThreadBlocksCount = prescanThreadCount / 64;
+		groupSumScanThreadBlocksCount = 1;
+
+		while (groupSumScanThreadBlocksCount < prescanThreadBlocksCount)
+		{
+			groupSumScanThreadBlocksCount *= 2;
+		}
+
+		compactThreadBlocksCount = Mathf.CeilToInt(grassChunkGrassCount / 128f);
+
+		voteBuffer = new(grassChunkGrassCount, sizeof(uint));
+		prescanBuffer = new(grassChunkGrassCount, sizeof(uint));
+		groupSumBuffer = new(groupSumScanThreadBlocksCount, sizeof(uint));
+		offsetBuffer = new(1024, sizeof(uint));
 	}
-	void EnableRendering(Dictionary<Vector2Int, Chunk> chunks, Vector2Int[] riversPoints, Dictionary<Vector2Int, float> globalHeightMap)
+	void EnableRendering(ChunkDataProvider chunkDataProvider, Dictionary<Vector2Int, Chunk> chunks, Vector2Int[] riversPoints, Dictionary<Vector2Int, float> globalHeightMap)
 	{
+		this.chunkDataProvider = chunkDataProvider;
 		this.chunks = chunks;
 		this.riversPoints = riversPoints;
 		this.globalHeightMap = globalHeightMap;
 
-		CalculateGrassMatricies();
+		CalculateGrassPositions();
 		InstantiateTrees(40);
+		//GenerateVillages(5, 15, 200, 35);
 		//InstantiateBridges(bridgesCount);
 
 		navSurface.BuildNavMesh();
@@ -95,10 +144,14 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		EventManager.OnChunkMeshesInstanced.Invoke();
 		areMeshesInstanced = true;
 	}
-	void CalculateGrassMatricies()
+	void CalculateGrassPositions()
 	{
-		Vector2 centerOffset = new Vector2(terrainPreset.TerrainSize.x / 2, terrainPreset.TerrainSize.y / 2);
+		Vector2 centerOffset = new Vector2(
+			(terrainPreset.TerrainSize.x * terrainPreset.ChunkSize / 2f) - terrainPreset.ChunkSize / 2f,
+			(terrainPreset.TerrainSize.y * terrainPreset.ChunkSize / 2f) - terrainPreset.ChunkSize / 2f
+		);
 
+		int i = 0;
 		foreach (BiomePreset biome in biomes)
 		{
 			foreach (GrassInspectorData grassData in biome.GrassesData)
@@ -107,31 +160,21 @@ public class ChunkMeshesInstancer : MonoBehaviour
 				{
 					for (int x = 0; x < terrainPreset.TerrainSize.x; x++)
 					{
-						Vector2Int position = new Vector2Int((int)((x - centerOffset.x + 0.5f) * terrainPreset.ChunkSize), (int)((y - centerOffset.y + 0.5f) * terrainPreset.ChunkSize));
-
-						//Debug.Log($"ChunkPosition: {position}");
-
-						//float offsetIncrement = 1 / (float)grassChunkSizeModifier;
+						Vector2Int position = new Vector2Int((int)(x * terrainPreset.ChunkSize - centerOffset.x), (int)(y * terrainPreset.ChunkSize - centerOffset.y));
 						for (float offsetY = 0.5f; offsetY <= grassChunkSizeModifier - 0.5f; offsetY += 1)
 						{
 							for (float offsetX = 0.5f; offsetX <= grassChunkSizeModifier - 0.5f; offsetX += 1)
 							{
 								float heightMapOffsetX = offsetX - 0.5f;
 								float heightMapOffsetY = offsetY - 0.5f;
-
-								//Debug.Log($"grassChunkSize: {grassChunkSize} rounded: {grassChunkSizeRounded}");
 								Vector2 heightMapOffset = new Vector2((int)(heightMapOffsetX * (grassChunkSize)), (int)(heightMapOffsetY * (grassChunkSize)));
 								
 								Vector2 chunkOffset = new Vector2(offsetX * grassChunkSize, offsetY * grassChunkSize);
-								//Debug.Log($"offset: {new Vector2(offsetX, offsetY)} chunkOffset: {chunkOffset} heightMapOffset: {heightMapOffset}");
 								chunkOffset.x -= terrainPreset.ChunkSize / 2f;
-								chunkOffset.y -= terrainPreset.ChunkSize / 2f;	
+								chunkOffset.y -= terrainPreset.ChunkSize / 2f;
 
 								Vector2 chunkPosition = new Vector2(position.x + chunkOffset.x, position.y + chunkOffset.y);
-
-								//Debug.Log($"chunk width: {grassChunkSizeRounded}");
-
-								Bounds bounds = new(new Vector3(chunkPosition.x, 0, chunkPosition.y), new Vector3(grassChunkSizeRounded + 5, terrainPreset.HeightMultiplayer, grassChunkSizeRounded + 5));
+								Bounds bounds = new(new Vector3(chunkPosition.x, 0, chunkPosition.y), new Vector3(grassChunkSizeRounded + 5, terrainPreset.HeightMultiplier, grassChunkSizeRounded + 5));
 
 								Material material = new(grassData.material);
 								Chunk chunk = chunks[position];
@@ -139,7 +182,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 								//creating args array
 								uint[] args = new uint[5];
 								args[0] = grassData.mesh.GetIndexCount(0);
-								args[1] = (uint)grassChunkGrassCount;
+								args[1] = (uint)0;
 
 								//setting args array to ComputeBuffer
 								ComputeBuffer argsBuffer = new(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
@@ -150,24 +193,54 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 								//other ComputeBuffers
 								ComputeBuffer meshPropertiesBuffer = new(grassChunkGrassCount, MeshProperties.Size());
-								ComputeBuffer heigthArrayBuffer = new(heightArray.Length, sizeof(float));
-								heigthArrayBuffer.SetData(heightArray);
+								ComputeBuffer heightArrayBuffer = new(heightArray.Length, sizeof(float));
+								heightArrayBuffer.SetData(heightArray);
 
-								//setting data to position buffer
+								//calculating non culled grass data
 								grassPositionsShader.SetBuffer(0, "_Properties", meshPropertiesBuffer);
-								grassPositionsShader.SetBuffer(0, "_HeightArray", heigthArrayBuffer);
+								grassPositionsShader.SetBuffer(0, "_HeightArray", heightArrayBuffer);
 								grassPositionsShader.SetFloat("_XOffset", heightMapOffset.x);
 								grassPositionsShader.SetFloat("_YOffset", heightMapOffset.y);
-
 								grassPositionsShader.Dispatch(0, grassChunkDimensionGrassCount, grassChunkDimensionGrassCount, 1);
 
-								material.SetBuffer("_Properties", meshPropertiesBuffer);
+								heightArrayBuffer.Release();
+
+								//voting
+								cullGrassUnderWaterShader.SetBuffer(0, "_Properties", meshPropertiesBuffer);
+								cullGrassUnderWaterShader.SetBuffer(0, "_VoteBuffer", voteBuffer);
+								cullGrassUnderWaterShader.SetFloat("_WaterTreshold", grassHeightThreshold);
+								cullGrassUnderWaterShader.Dispatch(0, grassChunkGrassCount, 1, 1);
+
+								//scanning
+								cullGrassUnderWaterShader.SetBuffer(1, "_VoteBuffer", voteBuffer);
+								cullGrassUnderWaterShader.SetBuffer(1, "_ScanBuffer", prescanBuffer);
+								cullGrassUnderWaterShader.SetBuffer(1, "_GroupSumArray", groupSumBuffer);
+								cullGrassUnderWaterShader.Dispatch(1, groupSumScanThreadBlocksCount, 1, 1);
+								
+								//scanning groups sums
+								cullGrassUnderWaterShader.SetInt("_NumOfGroups", groupSumScanThreadBlocksCount);
+								cullGrassUnderWaterShader.SetBuffer(2, "_GroupSumArrayIn", groupSumBuffer);
+								cullGrassUnderWaterShader.SetBuffer(2, "_GroupSumArrayOut", offsetBuffer);
+								cullGrassUnderWaterShader.Dispatch(2, 1, 1, 1);
+
+								ComputeBuffer culledMeshPropertiesBuffer = new(compactThreadBlocksCount * 128, MeshProperties.Size());
+								propertiesBuffers.Add(culledMeshPropertiesBuffer);
+
+								//compacting
+								cullGrassUnderWaterShader.SetBuffer(3, "_Properties", meshPropertiesBuffer);
+								cullGrassUnderWaterShader.SetBuffer(3, "_VoteBuffer", voteBuffer);
+								cullGrassUnderWaterShader.SetBuffer(3, "_ScanBuffer", prescanBuffer);
+								cullGrassUnderWaterShader.SetBuffer(3, "_ArgsBuffer", argsBuffer);
+								cullGrassUnderWaterShader.SetBuffer(3, "_CulledProperties", culledMeshPropertiesBuffer);
+								cullGrassUnderWaterShader.SetBuffer(3, "_GroupSumArray", offsetBuffer);
+								cullGrassUnderWaterShader.Dispatch(3, compactThreadBlocksCount, 1, 1);
+
+								meshPropertiesBuffer.Release();
+
+								material.SetBuffer("_Properties", culledMeshPropertiesBuffer);
 								material.SetTexture("_WindTex", animationTexture);
 								Color albedo = Random.ColorHSV();
 								material.SetVector("_Albedo", albedo);
-
-								propertiesBuffers.Add(heigthArrayBuffer);
-								propertiesBuffers.Add(meshPropertiesBuffer);
 
 								//adding chunk to dictionary
 								if (!grassesData.ContainsKey(biome.BiomeName))
@@ -182,6 +255,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 									bounds,
 									argsBuffer
 								);
+								i++;
 							}
 						}
 					}
@@ -191,7 +265,10 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	}
 	void InstantiateTrees(int amount)
 	{
-		Vector2 centerOffset = new Vector2(terrainPreset.TerrainSize.x / 2, terrainPreset.TerrainSize.y / 2);
+		Vector2 centerOffset = new Vector2(
+			(terrainPreset.TerrainSize.x * terrainPreset.ChunkSize / 2f) - terrainPreset.ChunkSize / 2f,
+			(terrainPreset.TerrainSize.y * terrainPreset.ChunkSize / 2f) - terrainPreset.ChunkSize / 2f
+		);
 
 		foreach (BiomePreset biome in biomes)
 		{
@@ -200,7 +277,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 				for (int y = 0; y < terrainPreset.TerrainSize.y; y++)
 				for (int x = 0; x < terrainPreset.TerrainSize.x; x++)
 				{
-					Vector2Int position = new Vector2Int((int)((x - centerOffset.x + 0.5f) * terrainPreset.ChunkSize), (int)((y - centerOffset.y + 0.5f) * terrainPreset.ChunkSize));
+					Vector2Int position = new Vector2Int((int)(x * terrainPreset.ChunkSize - centerOffset.x), (int)(y * terrainPreset.ChunkSize - centerOffset.y));
 
 					for (int i = 0; i < treeData.amount; i++)
 					{
@@ -216,6 +293,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 						if (Physics.Raycast(ray, out hit))
 						{
+							if (hit.point.y < grassHeightThreshold) continue;
 							if (hit.transform.gameObject.layer != LayerMask.NameToLayer("Ground")) continue;
 
 							Vector3 pos = new Vector3(rayPosition.x, hit.point.y, rayPosition.z);
@@ -226,6 +304,8 @@ public class ChunkMeshesInstancer : MonoBehaviour
 							tree.transform.position = pos;
 							tree.transform.rotation = Quaternion.Euler(rotation);
 							tree.transform.localScale *= scaleFactor;
+
+							trees.Add(tree);
 						}
 					}
 				}
@@ -267,7 +347,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 				Vector2Int size = new Vector2Int(25, 10);
 
-				if (IsAreaLand(inFrontLocal, size, matrix, out avgHeightFront) && IsAreaLand(backLocal, size, matrix, out avgHeightFront))
+				if (IsAreaLand(matrix, size, inFrontLocal, out avgHeightFront) && IsAreaLand(matrix, size, backLocal, out avgHeightFront))
 				{
 					isLocationFound = true;
 				}
@@ -286,9 +366,50 @@ public class ChunkMeshesInstancer : MonoBehaviour
 			bridge.transform.rotation = rot;
 		}
 	}
-	bool IsAreaLand(Vector2Int center, Vector2Int size, Matrix4x4 matrix, out float avgHeight)
+	void GenerateVillages(int amount, int radius, float villagesMinDistance, float clearForestRadius)
 	{
-		bool isAreaLand = true;
+		List<Vector2> previousPositions = new();
+		for(int i = 0; i < amount; i++)
+		{
+			Vector2 halfTerrainSize = terrainSize / 2;
+			Vector3 position = new Vector3(Random.Range(-halfTerrainSize.x, halfTerrainSize.x), 140, Random.Range(-halfTerrainSize.y, halfTerrainSize.y));
+			Ray ray = new(position, Vector3.down);
+
+			if (Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, LayerMask.GetMask("Ground")))
+			{	
+				Matrix4x4 matrix = Matrix4x4.TRS(hit.point, Quaternion.identity, new Vector3(1, 1, 1));
+				Vector2 pos2D = new Vector2(hit.point.x, hit.point.z);
+
+				if (IsAreaLand(matrix, new Vector2Int(0, 0), new Vector2Int(radius * 2, radius * 2), out float avgHeight, TerrainCheckType.circular) &&
+					previousPositions.Where(pos => Vector2.Distance(pos, pos2D) < villagesMinDistance).Count() <= 0)
+				{
+					previousPositions.Add(pos2D);
+					Debug.DrawRay(ray.origin, Vector3.down * 1000f, Color.magenta, 1000);
+
+					trees
+					.Where(tree =>
+					{
+						Vector3 treePos = tree.transform.position;
+						float distance = Vector2.Distance(new Vector2(treePos.x, treePos.z), pos2D);
+						return distance <= clearForestRadius;
+					})
+					.ToList()
+					.ForEach(tree => tree.SetActive(false));
+				}
+				else
+				{
+					amount++;
+				}
+			}
+		}
+	}
+	int index = 0;
+	bool IsAreaLand(Matrix4x4 matrix, Vector2Int offset, Vector2Int size, out float avgHeight, TerrainCheckType checkType = TerrainCheckType.rectangular)
+	{
+		if (checkType == TerrainCheckType.circular)
+		{
+			size *= 2;
+		}
 
 		int halfX = size.x / 2;
 		int halfY = size.y / 2;
@@ -296,35 +417,45 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		float sum = 0;
 		int amount = 0;
 
+		Color color = Random.ColorHSV();
 		for (int y = -halfY; y < halfY; y++)
 		{
 			for(int x = -halfX; x < halfX; x++)
 			{
-				Vector2Int point = center + new Vector2Int(x, y);
+				Vector2Int point = offset + new Vector2Int(x, y);
+				if(checkType == TerrainCheckType.circular && Vector2.Distance(point, Vector2.zero) > size.x / 2)
+				{
+					continue;
+				}
+
 				Vector3 transformedPoint = matrix.MultiplyPoint3x4(new Vector3(point.x, 0, point.y));
 				point = new Vector2Int(Mathf.RoundToInt(transformedPoint.x), Mathf.RoundToInt(transformedPoint.z));
 
 				if (globalHeightMap.ContainsKey(point))
 				{
-					float height = globalHeightMap[point];
+					float height = globalHeightMap[point] - 9f;
+					//Debug.DrawRay(new Vector3(point.x, height, point.y), Vector3.up * 10, color, 1000);
 
-					Debug.DrawRay(new Vector3(point.x, 0, point.y), Vector3.up * 10, Color.blue, 100);
-
-					//Debug.Log($"height: {height}");
+					//if(index == 0)
+					//{
+					//	chunkDataProvider.ChangeVertex(new Vector2Int(Mathf.RoundToInt(transformedPoint.x), Mathf.RoundToInt(transformedPoint.z)), (value) => { return value; });
+					//}
 
 					sum += height;
 					amount++;
 
-					if (height <= 50)
+					if (height <= grassHeightThreshold)
 					{
-						isAreaLand = false;
+						avgHeight = sum / amount;
+						return false;
 					}
 				}
+				//index++;
 			}
 		}
 		avgHeight = sum / amount;
 
-		return isAreaLand;
+		return true;
 	}
 	private void Update()
 	{
@@ -424,6 +555,17 @@ public class ChunkMeshesInstancer : MonoBehaviour
 			}
 		}
 		argsBuffers = null;
+		grassesData = null;
+
+		voteBuffer.Release();
+		prescanBuffer.Release();
+		offsetBuffer.Release();
+		groupSumBuffer.Release();
+		
+		voteBuffer = null;
+		prescanBuffer = null;
+		offsetBuffer = null;
+		groupSumBuffer = null;
 	}
 	private struct MeshProperties
 	{

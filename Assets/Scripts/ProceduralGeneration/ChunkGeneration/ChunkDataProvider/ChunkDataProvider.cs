@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Xml.Schema;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 public class ChunkDataProvider
@@ -11,20 +13,16 @@ public class ChunkDataProvider
     public NoiseInputData NoiseData { get; private set; }
     //mesh
     public MeshInputData MeshData { get; private set; }
-    public float LakeEndHeight { get; private set; }
-    public float LakeHeightMultiplier { get; private set; }
     //threading
     public int ChunkCount { get; private set; }
     public Vector2Int[] RiversPoints { get; private set; }
     public Dictionary<Vector2Int, float> GlobalHeightMap { get; set; }
 
     Queue<ThreadInfo<MeshNoisePair, Mesh, float[,]>> meshActionPairsQueue = new();
-    public ChunkDataProvider(NoiseInputData noiseData, MeshInputData meshData, float lakeEndHeight, float lakeHeightMultiplier)
+    public ChunkDataProvider(NoiseInputData noiseData, MeshInputData meshData)
     {
         NoiseData = noiseData;
         MeshData = meshData;
-		LakeEndHeight = lakeEndHeight;
-        LakeHeightMultiplier = lakeHeightMultiplier;
 
         new GameObject("CDPUpdate").AddComponent<CDPUpdate>().CDP = this;
 
@@ -45,7 +43,7 @@ public class ChunkDataProvider
                     new ThreadInfo<MeshNoisePair, Mesh, float[,]>
 					{
                         RequestedData = new (
-                            MeshGenerator.GenerateTerrainChunkData(new MeshInputData(MeshData.Size, NoiseData.LevelOfDetail, heightMap2, MeshData.HeightMultiplier), LakeEndHeight, LakeHeightMultiplier),
+                            MeshGenerator.GenerateTerrainChunkData(new MeshInputData(MeshData.Size, NoiseData.LevelOfDetail, heightMap2, MeshData.HeightMultiplier)),
                             heightMap2
                             ),
                         CallBack = callback
@@ -77,6 +75,22 @@ public class ChunkDataProvider
 				threadInfo.CallBack(threadInfo.RequestedData.MeshData.CreateMesh(), threadInfo.RequestedData.HeightMap);
 			}
         }
+    }
+    public void ChangeVertex(Vector2Int vertexPos, Func<float, float> func)
+    {
+        if (!GlobalHeightMap.ContainsKey(vertexPos)) 
+        {
+            Debug.Log("Changing the vertex failed: VERTEX DOESN'T EXISTS!");
+            return;
+        }
+        
+        float value = func(GlobalHeightMap[vertexPos]);
+        GlobalHeightMap[vertexPos] = value;
+
+        Vector2Int chunkCoords = new Vector2Int(vertexPos.x / MeshData.Size, vertexPos.y / MeshData.Size);
+        chunkCoords *= MeshData.Size;
+        Debug.DrawRay(new Vector3(vertexPos.x, value, vertexPos.y), Vector3.up * 500f, Color.black, 1000);
+        Debug.DrawRay(new Vector3(chunkCoords.x, value, chunkCoords.y), Vector3.up * 1000f, Color.black, 1000);
     }
 }
 public struct MeshNoisePair

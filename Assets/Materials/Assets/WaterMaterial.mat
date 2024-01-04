@@ -143,7 +143,7 @@ Material:
     - _FersnelSmoothnessStrength: 2.47
     - _FersnelStrength: 0.42
     - _FoamDistance: 3.97
-    - _FoamThiccness: 1.04
+    - _FoamThiccness: 1.18
     - _FoamThicness: 1
     - _Frequency: 2000
     - _GlossMapScale: 0
@@ -151,7 +151,7 @@ Material:
     - _GlossyReflections: 0
     - _Metallic: 0
     - _NoiseThreshold: 0.361
-    - _NoiseTreshold: 0.408
+    - _NoiseTreshold: 0.431
     - _NormalStrength: 3
     - _OcclusionStrength: 1
     - _Parallax: 0.005
@@ -171,8 +171,8 @@ Material:
     - _SubsurfaceAmbientStrength: 1
     - _Surface: 0
     - _Thinness: 1
-    - _TransparencyFersnelMinValue: 0.6
-    - _TransparencyFersnelStrength: 4
+    - _TransparencyFersnelMinValue: 0.817
+    - _TransparencyFersnelStrength: 3.25
     - _WorkflowMode: 1
     - _ZTest: 4
     - _ZWrite: 1
@@ -184,7 +184,7 @@ Material:
     - _Color: {r: 0.0141509175, g: 0.83762497, b: 1, a: 1}
     - _DeepWaterColor: {r: 0.17928976, g: 0.39110324, b: 0.745283, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _ShallowWaterColor: {r: 0.004182993, g: 0.59738314, b: 0.8867924, a: 0}
+    - _ShallowWaterColor: {r: 0, g: 0.6711111, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _SubsurfaceColor: {r: 1, g: 1, b: 1, a: 1}
     - _TopColor: {r: 1, g: 1, b: 1, a: 1}
