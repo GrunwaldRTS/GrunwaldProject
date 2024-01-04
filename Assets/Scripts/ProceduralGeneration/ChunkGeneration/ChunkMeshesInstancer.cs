@@ -149,7 +149,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		pathfinding = new PathFinding(grid);
 		GeneratePaths();
 
-		//navSurface.BuildNavMesh();
+		navSurface.BuildNavMesh();
 
 		EventManager.OnChunkMeshesInstanced.Invoke();
 		areMeshesInstanced = true;

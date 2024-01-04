@@ -6,7 +6,6 @@ public class BannerManager : MonoBehaviour
 {
     GameObject GroupIdDisplay;
     GameObject HealthBar;
-    int[] temp = { 100, 72, 72, 0, 13, 67, 42, 72, 5, 0 };
     
     
     void Awake()
@@ -14,6 +13,19 @@ public class BannerManager : MonoBehaviour
         GroupIdDisplay = transform.GetChild(0).gameObject;
         HealthBar = transform.GetChild(1).gameObject;
     }
+
+    void OnMouseEnter()
+    {
+        Outline script = transform.parent.gameObject.GetComponent<Outline>();
+        script.OutlineWidth = script.OutlineWidth + 1f;
+    }
+
+    void OnMouseExit()
+    {
+        Outline script = transform.parent.gameObject.GetComponent<Outline>();
+        script.OutlineWidth = script.OutlineWidth - 1f;
+    }
+
     public void SetGroupIdDisplay(char id)
     {
         if (id != '#')
@@ -26,7 +38,7 @@ public class BannerManager : MonoBehaviour
             GroupIdDisplay.GetComponent<TextMeshPro>().text = "";
         }
     }
-    public void SetHealthBar(int[] healthArray)
+    public void SetHealthBar(float[] healthArray)
     {
         
         int i = 0;

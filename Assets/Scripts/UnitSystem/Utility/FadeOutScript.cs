@@ -23,7 +23,6 @@ public class FadeOutScript : MonoBehaviour
         if (isFading)
         {
             FadeOut();
-            Debug.Log("fading");
         }
     }
 
@@ -31,7 +30,6 @@ public class FadeOutScript : MonoBehaviour
     {
         fadeTimer += Time.deltaTime;
         float alpha = Mathf.Lerp(1f, 0f, fadeTimer / fadeDuration);
-        Debug.Log(fadeTimer);
         Color newColor = initialColor;
         newColor.a = alpha;
 
