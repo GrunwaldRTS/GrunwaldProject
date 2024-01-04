@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac3a916481495404f8ec39e950075c2f, type: 3}
   m_Name: MainGenerationPreset
   m_EditorClassIdentifier: 
-  _terrainSize: {x: 3, y: 3}
+  _terrainSize: {x: 5, y: 5}
   _renderDistance: 2
   _chunkMaterial: {fileID: 2100000, guid: cb24e0db685bb774ab4bc72d8bc1d99e, type: 2}
   _levelOfDetail: 0

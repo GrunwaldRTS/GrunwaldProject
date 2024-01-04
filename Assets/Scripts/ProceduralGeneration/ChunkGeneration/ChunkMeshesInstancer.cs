@@ -22,6 +22,9 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	[SerializeField] float addValue = 1f;
 	[SerializeField][Range(1, 10)] int grassRenderDistance = 1;
 	[SerializeField] RenderTexture animationTexture;
+	[Header("TrailsGeneration")]
+	[SerializeField] Transform point1;
+	[SerializeField] Transform point2;
 
     ComputeShader grassPositionsShader;
 	ComputeShader animationMapShader;
@@ -58,6 +61,10 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	List<ComputeBuffer> propertiesBuffers = new();
 	List<ComputeBuffer> argsBuffers = new();
 
+	Grid grid;
+
+	PathFinding pathfinding;
+
 	enum TerrainCheckType
 	{
 		circular,
@@ -66,6 +73,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 	private void Awake()
 	{
+		grid = GetComponent<Grid>();
 		navSurface = GetComponent<NavMeshSurface>();
 		grassPositionsShader = Resources.Load<ComputeShader>("GrassPositionsShader");
 		animationMapShader = Resources.Load<ComputeShader>("AnimationMapShader");
@@ -138,8 +146,10 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		InstantiateTrees(40);
 		//GenerateVillages(5, 15, 200, 35);
 		//InstantiateBridges(bridgesCount);
+		pathfinding = new PathFinding(grid);
+		GeneratePaths();
 
-		navSurface.BuildNavMesh();
+		//navSurface.BuildNavMesh();
 
 		EventManager.OnChunkMeshesInstanced.Invoke();
 		areMeshesInstanced = true;
@@ -456,6 +466,14 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		avgHeight = sum / amount;
 
 		return true;
+	}
+	void GeneratePaths()
+	{
+		List<Node> paths = pathfinding.FindPath(point1.position, point2.position);
+		foreach (Node node in paths)
+		{
+			Debug.DrawRay(node.WorldPos, Vector3.up * 100f, Color.red, 1000f);
+		}
 	}
 	private void Update()
 	{
