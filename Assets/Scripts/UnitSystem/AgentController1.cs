@@ -17,19 +17,22 @@ public class AgentController1 : MonoBehaviour
     public bool isAttacking { get; set; } = false;
     private Coroutine rotationCoroutine = null;
     private Coroutine attackCoroutine = null;
-    private float StoppingDistance = 3f;
+    private float StoppingDistance = 4.5f;
     Renderer warriorRenderer;
     CapsuleCollider warriorColider;
     private float rotationSpeed = 0.05f;
     private Quaternion rotation = Quaternion.identity;
     GameObject band;
     private float backstabAngleThreshold = 135f;
+    [SerializeField] GameObject weapon;
+    private Animator weaponAnimator;
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
         warriorRenderer = transform.gameObject.GetComponent<Renderer>();
         warriorColider = transform.gameObject.GetComponent<CapsuleCollider>();
         band = transform.parent.gameObject;
+        weaponAnimator = weapon.GetComponent<Animator>();
     }
 
     private float GetDotProduct(GameObject obj1, GameObject obj2)
@@ -77,7 +80,15 @@ public class AgentController1 : MonoBehaviour
     {
         foreach(Transform childTransform in transform)
         {
-            childTransform.gameObject.GetComponent<MeshRenderer>().enabled = value;
+            if (childTransform.gameObject.GetComponent<MeshRenderer>() != null)
+            {
+                childTransform.gameObject.GetComponent<MeshRenderer>().enabled = value;
+            }
+            else
+            {
+                childTransform.GetChild(0).gameObject.GetComponent<MeshRenderer>().enabled = value;
+            }
+            
         }
     }
 
@@ -124,18 +135,20 @@ public class AgentController1 : MonoBehaviour
             else
             {
                 agent.ResetPath();
-                if (GetDotProduct(transform.gameObject,warriorToAttack) < .5f)
+                if (GetDotProduct(transform.gameObject,warriorToAttack) < 1f)
                 {
                     Rotate(warriorToAttack.transform.position);
                 }
                 yield return new WaitForSeconds(1.6f);
                 if(GetDotProduct(warriorToAttack, transform.gameObject) < -.3f)
                 {
-                    warriorToAttack.GetComponent<AgentController1>().DealDamage(10, transform.gameObject);    
+                    warriorToAttack.GetComponent<AgentController1>().DealDamage(10, transform.gameObject);
+                    weaponAnimator.SetTrigger("CriticalTrig");
                 }
                 else
                 {
                     warriorToAttack.GetComponent<AgentController1>().DealDamage(5, transform.gameObject);
+                    weaponAnimator.SetTrigger("SlashTrig");
                 }
                 if (!warriorToAttack.GetComponent<AgentController1>().isAlive)
                 {
@@ -161,6 +174,7 @@ public class AgentController1 : MonoBehaviour
         isAttacking = false;
         AttackTaskStop = false;
         Debug.Log("Stopping attack");
+        
     }
     public void Attack(GameObject warrior)
     {
@@ -180,6 +194,10 @@ public class AgentController1 : MonoBehaviour
     }
     private void Rotate(Vector3 pos)
     {
+        if (rotationCoroutine != null)
+        {
+            StopCoroutine(rotationCoroutine);
+        }
         Quaternion targetRotation = Quaternion.LookRotation((pos - transform.position).normalized);
         targetRotation.x = 0;
         targetRotation.z = 0;
@@ -199,5 +217,6 @@ public class AgentController1 : MonoBehaviour
         Rotate(rotation);
         gotUpdated = false;
         FinishedPath = true;
+        weaponAnimator.SetTrigger("IdleTrig");
     }
 }
