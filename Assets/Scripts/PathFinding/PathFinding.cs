@@ -2,67 +2,112 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using System.Diagnostics;
+using Debug = UnityEngine.Debug;
 
-public class PathFinding : MonoBehaviour
+public class PathFinding
 {
-	[SerializeField] GameObject camera;
-    [SerializeField] ProceduralTerrainPreset terrainPreset;
-    int xNodesDimention, yNodesDimention;
-
-    Node[,] nodes;
-	private void Awake()
-	{
-        xNodesDimention = terrainPreset.TerrainSize.x * terrainPreset.ChunkSize;
-        yNodesDimention = terrainPreset.TerrainSize.y * terrainPreset.ChunkSize;
-
-		EventManager.OnChunksGenerationCompleated.AddListener(PopulateNodes);
-	}
-	void PopulateNodes(ChunkDataProvider chunkDataProvider, Dictionary<Vector2Int, Chunk> chunks, Vector2Int[] riversPoints, Dictionary<Vector2Int, float> globalHeightMap)
+	public Grid Grid { get; private set; }
+	public Heap<Node> OpenNodes { get; private set; }
+	public HashSet<Node> ClosedNodes { get; private set; }
+    public PathFinding(Grid grid)
     {
-		nodes = new Node[xNodesDimention, yNodesDimention];
-
-		Vector2 centerOffset = new Vector2(
-			(terrainPreset.TerrainSize.x * terrainPreset.ChunkSize / 2f),
-			(terrainPreset.TerrainSize.y * terrainPreset.ChunkSize / 2f)
-		);
-		Debug.Log($"centerOffset: {centerOffset}");
-
-		for (int x = 0; x < xNodesDimention; x++)
-		{
-			for (int y = 0; y < yNodesDimention; y++)
-			{
-				Vector2Int position = new Vector2Int(x - (int)centerOffset.x, y - (int)centerOffset.y);
-				Ray ray = new Ray(new Vector3(position.x + 0.5f, 70, position.y + 0.5f), Vector3.down);
-
-				Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, LayerMask.GetMask("Ground"));
-				//Debug.DrawRay(ray.origin, ray.direction * 1000f, Color.gray, 1000f);
-				bool walkable = hit.point.y >= terrainPreset.WaterLevel;
-
-				nodes[x, y] = new Node(walkable, position, hit.point.y);
-			}
-		}
+		Grid = grid;
+		OpenNodes = new(Grid.GridSize());
+		ClosedNodes = new();
 	}
-	private class Node
+	public List<Node> FindPath(Vector3 startPos, Vector3 endPos)
 	{
-        public bool Walkable { get; private set; }
-        public Vector2Int Pos { get; private set; }
-        public float Height { get; private set; }
-        public Node(bool walkable, Vector2Int pos, float height)
-        {
-            Walkable = walkable;
-            Pos = pos;
-			Height = height;
-        }
-    }
-	private void OnDrawGizmos()
-	{
-		if (nodes != null)
+		OpenNodes.Clear();
+		ClosedNodes.Clear();
+
+		//Heap<Node> OpenNodes = new(Grid.GridSize());
+		//HashSet<Node> ClosedNodes = new();
+
+		Stopwatch stopwatch = Stopwatch.StartNew();
+		stopwatch.Start();
+
+		Node startNode = Grid.GetNodeFromWorldPosition(startPos);
+		//Debug.DrawRay(startNode.WorldPos, Vector3.up * 1000f, Color.yellow, 1000f);
+
+		Node endNode = Grid.GetNodeFromWorldPosition(endPos);
+		//Debug.DrawRay(endNode.WorldPos, Vector3.up * 1000f, Color.yellow, 1000f);
+
+		if (!startNode.Walkable || !endNode.Walkable)
 		{
-			foreach (Node node in nodes)
-			{
-				Vector3 pos = new Vector3(node.Pos.x, node.Height, node.Pos.y);
-				Gizmos.DrawWireCube(pos, new Vector3(0.9f, 0.9f, 0.9f));
-			}
+			Debug.Log("Impossiblbe to create path: nodes are not walkable");
+			return new List<Node>();
 		}
+
+		Node currentNode = startNode;
+		OpenNodes.Add(startNode);
+
+		//foreach (Node node in grid.GetNeighborNodes(startNode))
+		//{
+		//	Debug.DrawRay(node.WorldPos, Vector3.up * 100, Color.yellow, 1000);
+		//}
+		int i = 0;
+		while (OpenNodes.Count > 0)
+		{
+			currentNode = OpenNodes.RemoveFirst();
+			ClosedNodes.Add(currentNode);
+
+			if (currentNode == endNode) break;
+
+			foreach (Node node in Grid.GetNeighborNodes(currentNode))
+			{
+				if(!node.Walkable || ClosedNodes.Contains(node))
+				{	
+					continue;
+				}
+
+				int newMovementCostToNeighbour = currentNode.GCost + Node.Distance(currentNode, node);
+				if (!OpenNodes.Contains(node) || newMovementCostToNeighbour < node.GCost)
+				{
+					node.GCost = newMovementCostToNeighbour;
+					node.HCost = Node.Distance(node, endNode);
+					node.Parent = currentNode;
+
+					//Debug.DrawRay(node.WorldPos, Vector3.up * 100, Color.yellow, 1000);
+					if (!OpenNodes.Contains(node))
+					{
+						OpenNodes.Add(node);
+					}
+				}
+			}
+			//Debug.Log($"iteration: {i}");
+			//foreach(Node node in openNodes)
+			//{
+			//	Debug.Log($"pos: {node.WorldPos}");
+			//}
+
+			//if (i == 10) break;
+
+			i++;
+		}
+
+		stopwatch.Stop();
+		Debug.Log($"time elapsed: {stopwatch.ElapsedMilliseconds}ms");
+
+		return RetracePath(startNode, endNode);
+		//return new List<Node>();
+	}
+	static List<Node> RetracePath(Node startNode, Node endNode)
+	{
+		List<Node> path = new();
+		Node currentNode = endNode;
+
+		//Debug.Log($"startPos: {startNode.Pos}");
+
+		while(currentNode != startNode)
+		{
+			//Debug.Log($"pos: {currentNode.Pos}");
+			path.Add(currentNode);
+			currentNode = currentNode.Parent;
+		}
+
+		path.Add(startNode);
+		path.Reverse();
+		return path;
 	}
 }
