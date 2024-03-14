@@ -95,7 +95,7 @@ NavMeshAgent:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2455995968157483888}
-  m_Enabled: 1
+  m_Enabled: 0
   m_AgentTypeID: 0
   m_Radius: 0.5
   m_Speed: 3.5
@@ -108,7 +108,7 @@ NavMeshAgent:
   m_AutoRepath: 1
   m_Height: 2
   m_BaseOffset: 1
-  m_WalkableMask: 4294967295
+  m_WalkableMask: 1
   m_ObstacleAvoidanceType: 2
 --- !u!114 &2455995968157483897
 MonoBehaviour:
@@ -123,8 +123,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Tomb: {fileID: 3122849252902466108, guid: 9471ea8f99b627147907f742f04c85bd, type: 3}
-  isAlive: 1
   weapon: {fileID: 9049941302601535065}
+  isAlive: 1
 --- !u!136 &8186771240519440603
 CapsuleCollider:
   m_ObjectHideFlags: 0

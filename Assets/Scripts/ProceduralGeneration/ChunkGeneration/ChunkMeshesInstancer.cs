@@ -412,7 +412,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 			}
 		}
 	}
-	int index = 0;
+	//int index = 0;
 	bool IsAreaLand(Matrix4x4 matrix, Vector2Int offset, Vector2Int size, out float avgHeight, TerrainCheckType checkType = TerrainCheckType.rectangular)
 	{
 		if (checkType == TerrainCheckType.circular)

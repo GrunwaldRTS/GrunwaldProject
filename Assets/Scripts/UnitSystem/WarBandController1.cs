@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -62,7 +63,6 @@ public class WarBandController1 : MonoBehaviour
 			script.OutlineWidth = 0f;
 		}
 	}
-
     private void Awake()
 	{
 		mainCamera = Camera.main;
@@ -308,7 +308,7 @@ public class WarBandController1 : MonoBehaviour
 		foreach (GameObject warrior in warriors)
 		{
 			AgentController1 agentController = warrior.GetComponent<AgentController1>();
-			agentController.MoveToDestination(nestArray[i], rotation);
+			agentController.MoveToDestination(NetworkManagement.Instance.GetInputState(nestArray[i], rotation));
 			i++;
 		}
 		FinishedPathDetectorCoroutine = StartCoroutine(FinishedPathDetector(0.1f));

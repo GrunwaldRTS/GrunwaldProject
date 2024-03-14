@@ -6,9 +6,10 @@ using UnityEngine;
 public class InputGatherer : MonoBehaviour
 {
 	public List<GameObject> selectedWarbands = new List<GameObject>();
-	[SerializeField] private Camera mainCam;
+	private Camera mainCam;
 	[SerializeField] private GameObject Army;
-	[SerializeField] private RectTransform boxVisual;
+	[SerializeField] GameObject boxVisualPrefab;
+	private RectTransform boxVisual;
 	[SerializeField] private GameObject ArrowHeadModel;
 	Vector2 boxStartPos;
 	Vector2 boxEndPos;
@@ -29,11 +30,19 @@ public class InputGatherer : MonoBehaviour
 		arrowHeadVisual = Instantiate(ArrowHeadModel);
 		armyId = armyManager.ArmyId;
 
-		DrawBox();
 	}
+    private void Start()
+    {
+        mainCam = Camera.main;
+		GameObject rawImage = GameObject.Find("RawImage");
 
-	
-	private void SelectAllWarbands()
+        boxVisual = rawImage.GetComponent<RectTransform>();
+		//Instantiate(boxVisualPrefab).GetComponent<RectTransform>();
+		//boxVisual.transform.parent = GameObject.Find("BoxSelectCanvas").transform;
+		Debug.Log(rawImage);
+		DrawBox();
+    }
+    private void SelectAllWarbands()
 	{
 		foreach (Transform trans in Army.transform)
 		{
@@ -107,7 +116,6 @@ public class InputGatherer : MonoBehaviour
 			}
 		}
 	}
-
 	private void SetSelecdtedWarBandsGroupID(char groupID)
 	{
 		ResetWarBandGroupID(groupID);
@@ -118,9 +126,6 @@ public class InputGatherer : MonoBehaviour
 		}
 
 	}
-
-
-
 	// Update is called once per frame
 	void Update()
 	{
@@ -259,9 +264,6 @@ public class InputGatherer : MonoBehaviour
 			SelectAllWarbands();
 		}
 
-		
-
-
 		Dictionary<int, Func<bool>> keys = new()
 		{
 			{0, () => InputManager.Instance.Get0Down()},
@@ -303,7 +305,9 @@ public class InputGatherer : MonoBehaviour
 		Vector2 boxStart = boxStartPos;
 		Vector2 boxEnd = boxEndPos;
 		Vector2 boxCenter = (boxStart + boxEnd) / 2;
-		boxVisual.position = boxCenter;
+		boxVisual
+			.position =
+			boxCenter;
 		Vector2 boxSize = new Vector2(Mathf.Abs(boxStart.x-boxEnd.x),Mathf.Abs(boxStart.y-boxEnd.y));
 		boxVisual.sizeDelta = boxSize;
 	}

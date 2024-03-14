@@ -10,7 +10,7 @@ public class Grid : MonoBehaviour
 	int simplificationIncrement;
     [SerializeField] ProceduralTerrainPreset terrainPreset;
     int xNodesDimention, yNodesDimention;
-	int i = 0;
+	//int i = 0;
     Node[,] gridNodes;
 	private void Awake()
 	{

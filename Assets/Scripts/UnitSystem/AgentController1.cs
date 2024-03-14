@@ -1,35 +1,58 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class AgentController1 : MonoBehaviour
+public class AgentController1 : NetworkBehaviour
 {
-    public NavMeshAgent agent { get; private set; }
+    [Header("Visuals")]
     [SerializeField] GameObject Tomb;
+    [SerializeField] GameObject weapon;
+
+    public NavMeshAgent Agent { get; private set; }
     public bool FinishedPath { get; private set; } = false;
-    bool terrainGenerated;
-    public float Health { get; set; } = 100 ;
-    bool gotUpdated = false;
-    public bool isAlive = true;
+    public float Health { get; set; } = 100;
     public bool AttackTaskStop { get; set; } = false;
     public bool RotateTaskStop { get; set; } = false;
     public bool isAttacking { get; set; } = false;
-    private Coroutine rotationCoroutine = null;
-    private Coroutine attackCoroutine = null;
-    private float StoppingDistance = 4.5f;
+
+    public bool isAlive = true;
+    bool terrainGenerated;
+    bool gotUpdated = false;
+    float StoppingDistance = 4.5f;
+    float rotationSpeed = 0.05f;
+    float backstabAngleThreshold = 135f;
+    Coroutine rotationCoroutine = null;
+    Coroutine attackCoroutine = null;
     Renderer warriorRenderer;
     CapsuleCollider warriorColider;
-    private float rotationSpeed = 0.05f;
-    private Quaternion rotation = Quaternion.identity;
     GameObject band;
-    private float backstabAngleThreshold = 135f;
-    [SerializeField] GameObject weapon;
-    private Animator weaponAnimator;
+    Animator weaponAnimator;
+    Quaternion rotation = Quaternion.identity;
+
+    //netcode
+    //general
+
+    //server
+    //client
+    
     #region internal
-    private void Awake()
+    private void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
+        Agent = GetComponent<NavMeshAgent>();
+        Agent.enabled = false;
+
+        NavMeshTriangulation triangulation = NavMesh.CalculateTriangulation();
+        int vertexIndex = Random.Range(0, triangulation.vertices.Length);
+
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+        {
+            Debug.Log(hit.position);
+            Agent.Warp(hit.position);
+            Agent.enabled = true;
+        }
+
         warriorRenderer = transform.gameObject.GetComponent<Renderer>();
         warriorColider = transform.gameObject.GetComponent<CapsuleCollider>();
         band = transform.parent.gameObject;
@@ -37,7 +60,7 @@ public class AgentController1 : MonoBehaviour
     }
     private void Update()
     {
-        if (agent.remainingDistance <= agent.stoppingDistance && !agent.pathPending && gotUpdated)
+        if (Agent.remainingDistance <= Agent.stoppingDistance && !Agent.pathPending && gotUpdated)
         {
             OnDestinationReached();
         }
@@ -45,6 +68,10 @@ public class AgentController1 : MonoBehaviour
         {
             warriorFallen();
         }
+    }
+    private void FixedUpdate()
+    {
+        
     }
     private void OnDestinationReached()
     {
@@ -108,13 +135,49 @@ public class AgentController1 : MonoBehaviour
             {
                 childTransform.GetChild(0).gameObject.GetComponent<MeshRenderer>().enabled = value;
             }
-
         }
     }
     #endregion internal
     #region external
+    [ServerRpc]
+    public void MoveToDestinationServerRpc(InputState inputState)
+    {
+        MoveToDestination(inputState);
+    }
+    public void MoveToDestination(InputState inputState)
+    {
+        if (!IsServer)
+        {
+            MoveToDestinationServerRpc(inputState);
+        }
+        else
+        {
+            Debug.Log(inputState.NewDestination);
+        }
+        
+
+        gotUpdated = true;
+        FinishedPath = false;
+        rotation = inputState.TargetRotation;
+        Agent.SetDestination(inputState.NewDestination);
+        StopAllCoroutines();
+        isAttacking = false;
+    }
+    [ServerRpc]
+    public void AttackServerRpc(NetworkObjectReference reference)
+    {
+        GameObject warrior = null;
+        if (reference.TryGet(out NetworkObject netObject))
+        {
+            warrior = netObject.gameObject;
+        }
+
+        Attack(warrior);
+    }
     public void Attack(GameObject warrior)
     {
+        AttackServerRpc(new NetworkObjectReference(warrior));
+
         StopAllCoroutines();
         if (isAlive)
         {
@@ -129,11 +192,11 @@ public class AgentController1 : MonoBehaviour
             yield return new WaitForSeconds(interval);
             if (Vector3.Distance(transform.position, warriorToAttack.transform.position) > StoppingDistance)
             {
-                agent.SetDestination(warriorToAttack.transform.position);
+                Agent.SetDestination(warriorToAttack.transform.position);
             }
             else
             {
-                agent.ResetPath();
+                Agent.ResetPath();
                 if (GetDotProduct(transform.gameObject, warriorToAttack) < 1f)
                 {
                     Rotate(warriorToAttack.transform.position);
@@ -189,14 +252,9 @@ public class AgentController1 : MonoBehaviour
 
         return dotProduct;
     }
-
-    public void DealDamage(float dmg)
-    {
-        Health -= dmg;   
-    }
     public void DealDamage(float dmg, GameObject enemyWarrior)
     {
-        Health -= dmg;
+        DealDamage(dmg);
         if (!isAttacking)
         {
             Attack(enemyWarrior);
@@ -204,14 +262,9 @@ public class AgentController1 : MonoBehaviour
         GameObject enemyWarband = enemyWarrior.transform.parent.gameObject;
         band.GetComponent<WarBandController1>().GettingAttacked(enemyWarband);
     }
-    public void MoveToDestination(Vector3 pos, Quaternion targetRotation)
+    public void DealDamage(float dmg)
     {
-        gotUpdated = true;
-        FinishedPath = false;
-        rotation = targetRotation;
-        agent.SetDestination(pos);
-        StopAllCoroutines();
-        isAttacking = false;
+        Health -= dmg;   
     }
     #endregion external
 }

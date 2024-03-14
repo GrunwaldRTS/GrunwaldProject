@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class JumpState : UnitState
 {
-    private new Collider collider;
+    private Collider collider;
     private Rigidbody rBody;
     public JumpState(PlayerSFMBase b, Rigidbody rBody, Collider collider) : base(b)
     {

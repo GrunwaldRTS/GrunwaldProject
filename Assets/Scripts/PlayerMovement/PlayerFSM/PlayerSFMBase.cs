@@ -20,7 +20,7 @@ public class PlayerSFMBase : MonoBehaviour
 
     [Header("Shotting")]
     [SerializeField] private float _mouseSensivity;
-    [SerializeField] private Camera camera;
+    [SerializeField] private new Camera camera;
 
     private UnitState currentState;
     //player
