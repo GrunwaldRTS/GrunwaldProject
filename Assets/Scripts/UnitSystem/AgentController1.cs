@@ -31,35 +31,27 @@ public class AgentController1 : NetworkBehaviour
     Animator weaponAnimator;
     Quaternion rotation = Quaternion.identity;
 
-    //netcode
-    //general
-
-    //server
-    //client
-    
+    //public override void OnNetworkSpawn()
+    //{
+    //    if (IsServer)
+    //    {
+    //        GetComponent<NetworkObject>().ChangeOwnership(transform.parent.parent.gameObject.GetComponent<NetworkObject>().OwnerClientId);
+    //    }
+    //}
     #region internal
     private void Start()
     {
-        Agent = GetComponent<NavMeshAgent>();
-        Agent.enabled = false;
-
-        NavMeshTriangulation triangulation = NavMesh.CalculateTriangulation();
-        int vertexIndex = Random.Range(0, triangulation.vertices.Length);
-
-        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-        {
-            Debug.Log(hit.position);
-            Agent.Warp(hit.position);
-            Agent.enabled = true;
-        }
-
         warriorRenderer = transform.gameObject.GetComponent<Renderer>();
         warriorColider = transform.gameObject.GetComponent<CapsuleCollider>();
-        band = transform.parent.gameObject;
+        //band = transform.parent.gameObject;
         weaponAnimator = weapon.GetComponent<Animator>();
     }
     private void Update()
     {
+        AssignNavMeshAgent();
+
+        if (!IsOwner && !IsServer) return;
+
         if (Agent.remainingDistance <= Agent.stoppingDistance && !Agent.pathPending && gotUpdated)
         {
             OnDestinationReached();
@@ -69,10 +61,25 @@ public class AgentController1 : NetworkBehaviour
             warriorFallen();
         }
     }
-    private void FixedUpdate()
+    void AssignNavMeshAgent()
     {
-        
+        if (Agent != null) return;
+
+        Agent = GetComponent<NavMeshAgent>();
+        Agent.enabled = false;
+
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+        {
+            //Debug.Log(hit.position);
+            Agent.Warp(hit.position);
+            Agent.enabled = true;
+        }
     }
+    //public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+    //{
+    //    if (!IsServer) return;
+    //    transform.parent = parentNetworkObject.transform;
+    //}
     private void OnDestinationReached()
     {
         Rotate(rotation);
@@ -142,6 +149,7 @@ public class AgentController1 : NetworkBehaviour
     [ServerRpc]
     public void MoveToDestinationServerRpc(InputState inputState)
     {
+        Debug.Log("el negro");
         MoveToDestination(inputState);
     }
     public void MoveToDestination(InputState inputState)
@@ -154,11 +162,12 @@ public class AgentController1 : NetworkBehaviour
         {
             Debug.Log(inputState.NewDestination);
         }
-        
+
 
         gotUpdated = true;
         FinishedPath = false;
         rotation = inputState.TargetRotation;
+        //Debug.Log(IsOwner);
         Agent.SetDestination(inputState.NewDestination);
         StopAllCoroutines();
         isAttacking = false;

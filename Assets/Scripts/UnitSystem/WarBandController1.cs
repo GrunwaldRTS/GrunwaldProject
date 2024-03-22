@@ -1,12 +1,18 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.UIElements;
 
-public class WarBandController1 : MonoBehaviour
+public class WarBandController1 : NetworkBehaviour
 {
 	[SerializeField] GameObject rectangleFormationPrefab;
 	[SerializeField] GameObject NestRepPrefab;
+	[SerializeField] int initialWarriorsCount = 10;
+	[SerializeField] GameObject warriorPrefab;
 	public int Capacity { get; private set; } = 10;
 	public char GroupID { get; set; } = ' ';
 	public int ArmyId { get; private set; }
@@ -14,11 +20,12 @@ public class WarBandController1 : MonoBehaviour
 	Camera mainCamera;
 	List<GameObject> warriors;
 	GameObject formation;
-	GameObject warbandBanner;
+	[SerializeField]GameObject warbandBanner;
 	GameObject army;
 	Coroutine FinishedPathDetectorCoroutine;
 	bool coroutineFinished = true;
-
+	bool parentChanged = false;
+	bool warriorsInstantiated = false;
 
 	List<DestinationQueue> destinationQueue = new List<DestinationQueue>();
 
@@ -63,15 +70,15 @@ public class WarBandController1 : MonoBehaviour
 			script.OutlineWidth = 0f;
 		}
 	}
-    private void Awake()
-	{
-		mainCamera = Camera.main;
-		warriors = GetWarriorsInWarBand();
-		army = transform.parent.gameObject;
-		ArmyId = army.GetComponent<ArmyManager>().ArmyId;
-		formation = Instantiate(rectangleFormationPrefab);
-	}
-	public void GettingAttacked(GameObject warband)
+    public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+    {
+		base.OnNetworkObjectParentChanged(parentNetworkObject);
+
+		Debug.Log($"Parent changed: {OwnerClientId}");
+
+		parentChanged = true;
+    }
+    public void GettingAttacked(GameObject warband)
     {
 		int fightingWarriors = 0;
 		foreach(GameObject warrior in warriors)
@@ -96,8 +103,39 @@ public class WarBandController1 : MonoBehaviour
     {
 		return warbandBanner.transform.position;
     }
+    void SpawnAndAssignWarriorsInWarBand()
+    {
+        warriors = new List<GameObject>();
+		Vector3[] nestPositions = GetNestPositions();
 
-	List<GameObject> GetWarriorsInWarBand()
+        for (int i = 0; i < 10; i++)
+		{
+			GameObject go = Instantiate(warriorPrefab);
+			go.transform.position = nestPositions[i] + transform.position;
+			NetworkObject networkObject = go.GetComponent<NetworkObject>();
+			networkObject.SpawnWithOwnership(OwnerClientId, true);
+			Debug.Log(networkObject.TrySetParent(gameObject, true));
+
+			warriors.Add(go);
+		}
+    }
+    private Vector3[] GetNestPositions()
+    {
+		Vector3[] nestArray = new Vector3[10];
+        Transform trans = rectangleFormationPrefab.transform;
+        int i = 0;
+        foreach (Transform nest in trans)
+        {
+            if (nest.name.Contains("Nest"))
+            {
+                Vector3 nestPos = nest.position;
+                nestArray[i] = nestPos;
+                i++;
+            }
+        }
+        return nestArray;
+    }
+    List<GameObject> GetWarriorsInWarBand()
 	{
 		warriors = new List<GameObject>();
 
@@ -108,10 +146,6 @@ public class WarBandController1 : MonoBehaviour
 			{
 				warriors.Add(trans.gameObject);
 				i++;
-			}
-			else if (trans.gameObject.name.Contains("Banner"))
-			{
-				warbandBanner = trans.gameObject;
 			}
 		}
 
@@ -139,10 +173,34 @@ public class WarBandController1 : MonoBehaviour
 		}
 		return warriorsByDistance;
 	}
-	private void Update()
+    private void Start()
+    {
+        mainCamera = Camera.main;
+        Debug.Log($"mainCamera: {mainCamera}");
+    }
+    private void Update()
 	{
+		if (!parentChanged) return;
+
+		GetDependecies();
+
+		if (!warriorsInstantiated) return;
+
 		HoldBanner();
 		warbandBanner.GetComponent<BannerManager>().SetHealthBar(GetHealthInfo());
+
+		if (!IsOwner && !IsServer) return;
+
+		if (InputManager.Instance.GetMoveDown())
+		{
+			foreach(GameObject warrior in warriors)
+			{
+				NavMeshAgent agent = warrior.GetComponent<NavMeshAgent>();
+				agent.Warp(warrior.transform.position + warrior.transform.forward * 2f);
+			}
+		}
+
+
 		if (!IsMarching() && destinationQueue.Count > 0)
 		{
             if (destinationQueue[0].isAttack)
@@ -170,10 +228,39 @@ public class WarBandController1 : MonoBehaviour
         }
 
 	}
+	void GetDependecies()
+	{
+		if (!warriorsInstantiated)
+		{
+			Debug.Log($"getting dependecies: {OwnerClientId}");
 
+			army = transform.parent.gameObject;
+			ArmyId = army.GetComponent<ArmyManager>().ArmyId;
+			Debug.Log(ArmyId);
+			formation = Instantiate(rectangleFormationPrefab);
+
+			if (IsServer)
+			{
+				SpawnAndAssignWarriorsInWarBand();
+			}
+			else
+			{
+				GetWarriorsInWarBand();
+			}
+
+			warriorsInstantiated = true;
+		}
+    }
 	public void HoldBanner(float BannerScaleMultiplier = .001f, float BannerUpwardSpeed = .001f)
 	{
-		float distanceToCamera = Vector3.Distance(warbandBanner.transform.position, mainCamera.transform.position);
+		if (!IsOwner){
+			//Debug.Log("holding enemy banner");
+		}
+
+		float distanceToCamera = Vector3.Distance(
+			warbandBanner.transform.position,
+			mainCamera.transform.position
+			);
 		float newScale = 0.4f + distanceToCamera * BannerScaleMultiplier;
 		float upwardMovement = GetWarriorsPosition().y + distanceToCamera * BannerUpwardSpeed + 10;
 		warbandBanner.transform.position = new Vector3(GetWarriorsPosition().x, upwardMovement, GetWarriorsPosition().z);
@@ -231,8 +318,6 @@ public class WarBandController1 : MonoBehaviour
 	}
 	public Vector3 GetWarriorsPosition()
 	{
-
-
 		Vector3 positionSum = Vector3.zero;
 
 		foreach (GameObject warrior in warriors)

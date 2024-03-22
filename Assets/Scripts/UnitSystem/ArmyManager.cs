@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class ArmyManager : MonoBehaviour
+public class ArmyManager : NetworkBehaviour
 {
+	[SerializeField] GameObject warbandPrefab;
 	[SerializeField] GameObject rectangleArmyFormationPrefab;
 	GameObject Formation;
 	int maxArmySize = 10;
@@ -13,6 +15,21 @@ public class ArmyManager : MonoBehaviour
 	void Awake()
 	{
 		Formation = Instantiate(rectangleArmyFormationPrefab);
+	}
+    public override void OnNetworkSpawn()
+    {
+        ArmyId = (int)OwnerClientId;
+
+		StartSpawnWarband();
+    }
+	void StartSpawnWarband()
+	{
+		if (!IsServer) return;
+
+		GameObject go = Instantiate(warbandPrefab);
+		NetworkObject obj = go.GetComponent<NetworkObject>();
+		obj.SpawnWithOwnership(OwnerClientId, true);
+		Debug.Log(obj.TrySetParent(gameObject, true));
 	}
     private void Update()
     {

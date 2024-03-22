@@ -1,24 +1,16 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class NetworkManagement : MonoBehaviour
 {
-    [SerializeField] uint _tickRate = 50;
     [SerializeField] float _reconcolidationTreshold = 5f;
     [SerializeField] float _idleReconcolidationTreshold = 0.5f;
     [SerializeField] float _reconcolidationCoolDown = 1f;
-    [SerializeField] float _extrapolationDelay = 100f;
+    [SerializeField] int _interpolationDelay = 100;
 
-    private void Start()
-    {
-        Time.fixedDeltaTime = 1f / _tickRate;
-    }
-    private void FixedUpdate()
-    {
-        CurrentTick++;
-    }
     static NetworkManagement _instance;
     public static NetworkManagement Instance { 
         get 
@@ -31,15 +23,13 @@ public class NetworkManagement : MonoBehaviour
             return _instance;
         }
     }
-    public int TickRate { get => (int)_tickRate; }
     public float ReconcilidationTreshold { get => _reconcolidationTreshold; }
     public float IdleReconcolidationTreshold { get => _idleReconcolidationTreshold; }
     public float ReconcolidationCoolDown { get => _reconcolidationCoolDown; }
-    public float ExtrapolationDelay { get => _extrapolationDelay; }
-    public int CurrentTick { get; private set; }
+    public int InterpolationDelay { get => _interpolationDelay; }
 
     public InputState GetInputState(Vector3 newPosition, Quaternion finalRotation)
     {
-        return new(CurrentTick, DateTime.Now, newPosition,  finalRotation);
+        return new(NetworkManager.Singleton.LocalTime.Tick, NetworkManager.Singleton.LocalTime.Time, newPosition,  finalRotation);
     }
 }

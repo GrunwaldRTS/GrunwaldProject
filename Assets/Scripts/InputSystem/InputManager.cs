@@ -78,7 +78,8 @@ public class InputManager : Singelton<InputManager>
     }
 	public bool GetShiftHold()
 	{
-		return input.Player.ShiftKey.ReadValue<float>() > 0;
+        //return input.Player.ShiftKey.ReadValue<float>() > 0;
+        return false;
 	}
 	public bool GetADown()
     {

@@ -2,12 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 
-public class InputGatherer : MonoBehaviour
+public class InputGatherer : NetworkBehaviour
 {
 	public List<GameObject> selectedWarbands = new List<GameObject>();
 	private Camera mainCam;
-	[SerializeField] private GameObject Army;
+	[SerializeField] GameObject armyPrefab;
 	[SerializeField] GameObject boxVisualPrefab;
 	private RectTransform boxVisual;
 	[SerializeField] private GameObject ArrowHeadModel;
@@ -24,15 +25,19 @@ public class InputGatherer : MonoBehaviour
 	GameObject enemyBand;
 	void Awake()
 	{
-		armyManager = Army.GetComponent<ArmyManager>();
+		armyManager = GetComponent<ArmyManager>();
 		boxEndPos = Vector2.zero;
 		boxStartPos = Vector2.zero;
 		arrowHeadVisual = Instantiate(ArrowHeadModel);
-		armyId = armyManager.ArmyId;
-
 	}
+    public override void OnNetworkSpawn()
+    {
+        armyId = (int)OwnerClientId;
+    }
     private void Start()
     {
+		if (!IsOwner) return;
+
         mainCam = Camera.main;
 		GameObject rawImage = GameObject.Find("RawImage");
 
@@ -42,23 +47,20 @@ public class InputGatherer : MonoBehaviour
 		Debug.Log(rawImage);
 		DrawBox();
     }
-    private void SelectAllWarbands()
+	private void SelectAllWarbands()
 	{
-		foreach (Transform trans in Army.transform)
+		foreach (Transform trans in transform)
 		{
-
 			if (trans.gameObject.name.Contains("WarBand"))
 			{
 				SelectWarband(trans.gameObject);
 			}
-
 		}
 	}
-
 	private void SelectWarbandsByGroupID(char id)
 	{
 		DeselectAllWarbands();
-		foreach (Transform trans in Army.transform)
+		foreach (Transform trans in transform)
 		{
 			if (trans.name.Contains("WarBand"))
 			{
@@ -70,7 +72,6 @@ public class InputGatherer : MonoBehaviour
 			}
 		}
 	}
-
 	private void DeselectAllWarbands()
 	{
 		foreach (GameObject warband in selectedWarbands)
@@ -79,16 +80,18 @@ public class InputGatherer : MonoBehaviour
 		}
 		selectedWarbands.Clear();
 	}
-
 	private void SelectWarband(GameObject warband)
 	{
+		//Debug.Log("el negro");
+		//Debug.Log(!selectedWarbands.Contains(warband));
+		//Debug.Log($"warband id: {warband.GetComponent<WarBandController1>().ArmyId}, armyid: {armyId}, result: {warband.GetComponent<WarBandController1>().ArmyId == armyId}");
 		if (!selectedWarbands.Contains(warband) && warband.GetComponent<WarBandController1>().ArmyId == armyId)
 		{
+			//Debug.Log("el negro inside");
 			warband.GetComponent<Outline>().OutlineWidth = SelectedOutlineWidth;
 			selectedWarbands.Add(warband);
 		}
 	}
-
 	private void DeselectWarband(GameObject warband)
 	{
 		warband.GetComponent<Outline>().OutlineWidth = 0f;
@@ -97,7 +100,6 @@ public class InputGatherer : MonoBehaviour
 			selectedWarbands.Remove(warband);
 		}
 	}
-
 	private GameObject GetParentObj(GameObject child)
 	{
 		return child.transform.parent.gameObject;
@@ -105,7 +107,7 @@ public class InputGatherer : MonoBehaviour
 
 	private void ResetWarBandGroupID(char groupID)
 	{
-		foreach (Transform trans in Army.transform)
+		foreach (Transform trans in transform)
 		{
 			if (trans.gameObject.name.Contains("WarBand"))
 			{
@@ -129,6 +131,10 @@ public class InputGatherer : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
+		//Debug.Log($"IsOwner: {IsOwner}, id: {armyId}");
+		if (!IsOwner) return;
+		//Debug.Log(GetComponent<NetworkObject>().NetworkObjectId);
+
 		if (InputManager.Instance.GetRightClickDown())
 		{
 			Ray MovePosition = mainCam.ScreenPointToRay(InputManager.Instance.GetMousePosition());
@@ -214,9 +220,8 @@ public class InputGatherer : MonoBehaviour
 				GameObject hitObject = hitInfo.collider.gameObject;
 				if (hitObject.name.Contains("Banner") || hitObject.name.Contains("Warrior"))
 				{
-					GameObject parentObj = GetParentObj(hitObject);
 					DeselectAllWarbands();
-					SelectWarband(parentObj);
+					SelectWarband(hitObject.transform.parent.gameObject);
 				}
 				else
 				{
@@ -288,13 +293,11 @@ public class InputGatherer : MonoBehaviour
 				Debug.Log(clicked);
 				if (clicked)
 				{
-
 					SetSelecdtedWarBandsGroupID(charDigit);
 				}
 			}
 			else if (clicked)
 			{
-
 				SelectWarbandsByGroupID(charDigit);
 			}
 
@@ -302,6 +305,7 @@ public class InputGatherer : MonoBehaviour
 	}
 	private void DrawBox()
 	{
+		if (!IsOwner) return;
 		Vector2 boxStart = boxStartPos;
 		Vector2 boxEnd = boxEndPos;
 		Vector2 boxCenter = (boxStart + boxEnd) / 2;
@@ -341,7 +345,7 @@ public class InputGatherer : MonoBehaviour
 	private void SelectUnitsInBox()
     {
 		
-		foreach (Transform trans in Army.transform)
+		foreach (Transform trans in transform)
 		{
 			if (trans.gameObject.name.Contains("WarBand"))
 			{
