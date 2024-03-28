@@ -30,6 +30,7 @@ public class AgentController1 : NetworkBehaviour
     GameObject band;
     Animator weaponAnimator;
     Quaternion rotation = Quaternion.identity;
+    BetterNetworkTransform networkTransform;
 
     //public override void OnNetworkSpawn()
     //{
@@ -41,6 +42,7 @@ public class AgentController1 : NetworkBehaviour
     #region internal
     private void Start()
     {
+        networkTransform = GetComponent<BetterNetworkTransform>();
         warriorRenderer = transform.gameObject.GetComponent<Renderer>();
         warriorColider = transform.gameObject.GetComponent<CapsuleCollider>();
         //band = transform.parent.gameObject;
@@ -149,7 +151,8 @@ public class AgentController1 : NetworkBehaviour
     [ServerRpc]
     public void MoveToDestinationServerRpc(InputState inputState)
     {
-        Debug.Log("el negro");
+        //Debug.Log("el negro");
+        //networkTransform.UpdateInputStateClientRpc(inputState);
         MoveToDestination(inputState);
     }
     public void MoveToDestination(InputState inputState)
@@ -160,7 +163,7 @@ public class AgentController1 : NetworkBehaviour
         }
         else
         {
-            Debug.Log(inputState.NewDestination);
+            //Debug.Log(inputState.NewDestination);
         }
 
 

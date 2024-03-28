@@ -6,6 +6,7 @@ using System;
 using UnityEngine.PlayerLoop;
 using UnityEngine.AI;
 using Unity.VisualScripting;
+using System.Runtime.CompilerServices;
 
 [RequireComponent(typeof(Transform))]
 [DisallowMultipleComponent]
@@ -44,6 +45,7 @@ public class BetterNetworkTransform : NetworkBehaviour
     {
         ServerUpdatesBuffer = new(2048);
         ClientBuffer = new(2048);
+        ServerApprovedInputStates = new(2048);
         GetCubesTransforms();
     }
     public override void OnNetworkSpawn()
@@ -98,6 +100,10 @@ public class BetterNetworkTransform : NetworkBehaviour
 
         TransformState ts = GetTransformState();
         UpdateStateClientRpc(ts);
+
+        if (!usesNavmeshAgent) return;
+        InputState inputState = NetworkManagement.Instance.GetInputState(agent.destination, Quaternion.identity);
+        UpdateInputStateClientRpc(inputState);
     }
     [ClientRpc]
     void UpdateStateClientRpc(TransformState newState)
@@ -106,6 +112,18 @@ public class BetterNetworkTransform : NetworkBehaviour
 
         LastServerState = newState;
         ServerUpdatesBuffer.Set(newState, newState.Tick);
+    }
+    [ClientRpc]
+    void UpdateInputStateClientRpc(InputState newState)
+    {
+        if (!usesNavmeshAgent) return;
+        ServerApprovedInputStates.Set(newState, newState.Tick);
+    }
+    [ClientRpc]
+    public void OutsideUpdateInputStateClientRpc(InputState newState)
+    {
+        if (usesNavmeshAgent) return;
+        ServerApprovedInputStates.Set(newState, newState.Tick);
     }
     void HandleClientTick()
     {
@@ -141,11 +159,29 @@ public class BetterNetworkTransform : NetworkBehaviour
             if (usesNavmeshAgent)
             {
                 ResetNavMeshAgent(serverState.GetPosition());
+
+                int reconcileTick = tick;
+                while (reconcileTick < NetworkManager.LocalTime.Time)
+                {
+                    InputState rewindInputState = ServerApprovedInputStates.Get(reconcileTick);
+
+                    agent.SetDestination(rewindInputState.NewDestination);
+
+                    tick++;
+                }
             }
             else
             {
-                transform.position = serverState.GetPosition();
-                transform.rotation = serverState.GetQuatRotation();
+                //transform.position = serverState.GetPosition();
+                //transform.rotation = serverState.GetQuatRotation();
+
+                //int reconcileTick = tick;
+                //while(reconcileTick < NetworkManager.LocalTime.Time)
+                //{
+                //    InputState rewindInputState = ServerApprovedInputStates.Get(reconcileTick);
+
+
+                //}
             }
         }
 
@@ -153,7 +189,6 @@ public class BetterNetworkTransform : NetworkBehaviour
     }
     void ResetNavMeshAgent(Vector3 warpPosition)
     {
-        agent.ResetPath();
         agent.enabled = false;
 
         if (NavMesh.SamplePosition(warpPosition, out NavMeshHit hit, 2f, NavMesh.AllAreas))
@@ -165,9 +200,6 @@ public class BetterNetworkTransform : NetworkBehaviour
     }
     void HandleInterpolation()
     {
-        //InterpolationBuffer.Index = index;
-        //InterpolationBuffer.TheIndex = theIndex;
-
         if (IsOwner || IsServer) return;
 
         TransformState transformState = GetTransformState(
