@@ -10,12 +10,14 @@ public class Node : IHeapElement<Node>
     public int FCost { get => GCost + HCost; }
     public Node Parent { get; set; }
 	public int HeapIndex { get; set; }
+    public int MovementPenalty { get; set; }
 
-	public Node(bool walkable, Vector2Int pos, Vector3 worldPos)
+    public Node(bool walkable, Vector2Int pos, Vector3 worldPos, int penalty)
 	{
 		Walkable = walkable;
 		Pos = pos;
 		WorldPos = worldPos;
+		MovementPenalty = penalty;
 	}
 	public static int Distance(Node node1, Node node2)
 	{

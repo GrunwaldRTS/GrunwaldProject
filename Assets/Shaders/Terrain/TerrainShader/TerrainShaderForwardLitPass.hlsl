@@ -70,13 +70,13 @@ float4 Fragment(Interpolators input) : SV_TARGET{
 
 	if(index + 1 < _HeightsCount){
 		float height = saturate(Remap(input.positionWS.y, _Heights[index].startHeight, _Heights[index].endHeight, 0, 1));
-		albedo = lerp(albedo, _Heights[index + 1].albedo, height);
+		albedo = lerp(albedo, _Heights[index + 1].albedo.rgb, height);
 	}
 
 	InputData lightingData = (InputData)0;
 	lightingData.positionWS = input.positionWS;
 	lightingData.normalWS = input.normalWS;
-	lightingData.viewDirectionWS = normalize(_WorldSpaceCameraPos - input.positionWS);;
+	lightingData.viewDirectionWS = normalize(_WorldSpaceCameraPos - input.positionWS);
 	lightingData.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
 	lightingData.bakedGI = SAMPLE_GI(input.lightmapUV, input.vertexSH, input.normalWS);
 

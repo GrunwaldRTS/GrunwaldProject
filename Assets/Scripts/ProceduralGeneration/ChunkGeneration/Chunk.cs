@@ -52,4 +52,37 @@ public class Chunk
 
 		EventManager.OnChunkGenerationCompleated.Invoke();
 	}
+	public bool IsChunkInBoundsOfPoints(List<Vector3> points)
+	{
+		foreach(Vector3 point in points)
+		{
+			if (IsPointInBoundOfChunk(point)) return true;
+		}
+
+		return false;
+	}
+    public bool IsChunkInBoundsOfPoints(List<Vector2> points)
+    {
+        foreach (Vector2 point in points)
+        {
+            if (IsPointInBoundOfChunk(point)) return true;
+        }
+
+        return false;
+    }
+    public bool IsPointInBoundOfChunk(Vector3 point)
+    {
+        return IsPointInBoundOfChunk(new Vector2(point.x, point.z));
+    }
+    public bool IsPointInBoundOfChunk(Vector2 point)
+	{
+		int chunkSize = DataProvider.MeshData.Size;
+		int halfChunkSize = chunkSize / 2;	
+        Vector4 bounds = new(Position.x + halfChunkSize, Position.x - halfChunkSize, Position.y + halfChunkSize, Position.y - halfChunkSize);
+
+		bool xInBounds = point.x <= bounds.x && point.x >= bounds.y;
+		bool yInBounds = point.y <= bounds.z && point.y >= bounds.w;
+
+		return xInBounds && yInBounds;
+	}
 }

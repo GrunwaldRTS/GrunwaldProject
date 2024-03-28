@@ -41,6 +41,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	List<GameObject> trees = new();
 	Vector2Int[] riversPoints;
 	int animationTextureResolution = 1024;
+	int pathTextureResolution = 512;
 
 	Vector2 terrainSize;
 	float grassChunkSize;
@@ -60,7 +61,11 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	List<ComputeBuffer> propertiesBuffers = new();
 	List<ComputeBuffer> argsBuffers = new();
 
-	Grid grid;
+	List<Vector2> villagesPositions;
+
+    Grid grid;
+
+	List<Vector3> pathPositions = new();
 
 	PathFinding pathfinding;
 
@@ -143,7 +148,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 		CalculateGrassPositions();
 		InstantiateTrees(40);
-		//GenerateVillages(5, 15, 200, 35);
+		GenerateVillages(5, 15, 200, 35);
 		//InstantiateBridges(bridgesCount);
 		pathfinding = new PathFinding(grid);
 		GeneratePaths();
@@ -245,6 +250,21 @@ public class ChunkMeshesInstancer : MonoBehaviour
 								cullGrassUnderWaterShader.Dispatch(3, compactThreadBlocksCount, 1, 1);
 
 								meshPropertiesBuffer.Release();
+
+        //                        RenderTexture pathTexture = new(pathTextureResolution, pathTextureResolution, 0);
+								//pathTexture.enableRandomWrite = true;
+								//pathTexture.Create();
+
+								//if (chunk.IsChunkInBoundsOfPoints(pathPositions))
+								//{
+								//	List<Vector3> positions = pathPositions.Where(point => chunk.IsPointInBoundOfChunk(point)).ToList();
+								
+								//	ComputeBuffer positionsBuffer = new(positions.Count, sizeof(float) * 3);
+								//	positionsBuffer.SetData(positions);
+
+
+								//}
+
 
 								material.SetBuffer("_Properties", culledMeshPropertiesBuffer);
 								material.SetTexture("_WindTex", animationTexture);
@@ -377,7 +397,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	}
 	void GenerateVillages(int amount, int radius, float villagesMinDistance, float clearForestRadius)
 	{
-		List<Vector2> previousPositions = new();
+		villagesPositions = new();
 		for(int i = 0; i < amount; i++)
 		{
 			Vector2 halfTerrainSize = terrainSize / 2;
@@ -390,9 +410,9 @@ public class ChunkMeshesInstancer : MonoBehaviour
 				Vector2 pos2D = new Vector2(hit.point.x, hit.point.z);
 
 				if (IsAreaLand(matrix, new Vector2Int(0, 0), new Vector2Int(radius * 2, radius * 2), out float avgHeight, TerrainCheckType.circular) &&
-					previousPositions.Where(pos => Vector2.Distance(pos, pos2D) < villagesMinDistance).Count() <= 0)
+					villagesPositions.Where(pos => Vector2.Distance(pos, pos2D) < villagesMinDistance).Count() <= 0)
 				{
-					previousPositions.Add(pos2D);
+					villagesPositions.Add(pos2D);
 					Debug.DrawRay(ray.origin, Vector3.down * 1000f, Color.magenta, 1000);
 
 					trees
@@ -468,11 +488,17 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	}
 	void GeneratePaths()
 	{
-		List<Node> paths = pathfinding.FindPath(point1.position, point2.position);
-		foreach (Node node in paths)
+		foreach(Node node in pathfinding.FindPath(point1.position, point2.position))
 		{
-			Debug.DrawRay(node.WorldPos, Vector3.up * 100f, Color.red, 1000f);
+			pathPositions.Add(node.WorldPos);
 		}
+		//for (int i = 0; i < villagesPositions.Count; i++)
+		//{
+		//	Vector2 currentVillagePos = villagesPositions[i];
+		//	Vector2 closestVillagePos = villagesPositions.Where(village => village != currentVillagePos).OrderByDescending(village => Vector2.Distance(village, currentVillagePos)).FirstOrDefault();
+
+		//	List<Node> pathPoints = pathfinding.FindPath(currentVillagePos, closestVillagePos);
+		//}
 	}
 	private void Update()
 	{

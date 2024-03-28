@@ -13,7 +13,7 @@ public class PathFinding
     public PathFinding(Grid grid)
     {
 		Grid = grid;
-		OpenNodes = new(Grid.GridSize());
+		OpenNodes = new(Grid.GetGridSize());
 		ClosedNodes = new();
 	}
 	public List<Node> FindPath(Vector3 startPos, Vector3 endPos)
@@ -61,7 +61,7 @@ public class PathFinding
 					continue;
 				}
 
-				int newMovementCostToNeighbour = currentNode.GCost + Node.Distance(currentNode, node);
+				int newMovementCostToNeighbour = currentNode.GCost + Node.Distance(currentNode, node) + node.MovementPenalty;
 				if (!OpenNodes.Contains(node) || newMovementCostToNeighbour < node.GCost)
 				{
 					node.GCost = newMovementCostToNeighbour;
