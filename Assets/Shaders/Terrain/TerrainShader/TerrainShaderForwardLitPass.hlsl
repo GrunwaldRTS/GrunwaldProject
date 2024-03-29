@@ -7,6 +7,7 @@ struct Attributes{
 	float4 tangentOS : TANGENT;
 	float2 uv : TEXCOORD0;
 	float4 texcoord1 : TEXCOORD1;
+    //uint id : SV_VertexID;
 };
 
 struct Interpolators{
@@ -29,10 +30,13 @@ struct Height{
 int _HeightsCount;
 StructuredBuffer<Height> _Heights;
 
+TEXTURE2D(_PathMap);
+SAMPLER(sampler_PathMap);
+
 Interpolators Vertex(Attributes input){
 	Interpolators output;
-
-	VertexPositionInputs posnInputs = GetVertexPositionInputs(input.positionOS.xyz);
+	
+    VertexPositionInputs posnInputs = GetVertexPositionInputs(input.positionOS.xyz);
 	VertexNormalInputs normInputs = GetVertexNormalInputs(input.normalOS);
 
 	output.positionCS = posnInputs.positionCS;
@@ -72,6 +76,8 @@ float4 Fragment(Interpolators input) : SV_TARGET{
 		float height = saturate(Remap(input.positionWS.y, _Heights[index].startHeight, _Heights[index].endHeight, 0, 1));
 		albedo = lerp(albedo, _Heights[index + 1].albedo.rgb, height);
 	}
+	
+    float4 pathMask = SAMPLE_TEXTURE2D(_PathMap, sampler_PathMap, input.uv);
 
 	InputData lightingData = (InputData)0;
 	lightingData.positionWS = input.positionWS;
@@ -81,7 +87,7 @@ float4 Fragment(Interpolators input) : SV_TARGET{
 	lightingData.bakedGI = SAMPLE_GI(input.lightmapUV, input.vertexSH, input.normalWS);
 
 	SurfaceData surfaceInput;
-	surfaceInput.albedo = albedo;
+	surfaceInput.albedo = pathMask.rgb;
 	surfaceInput.specular = 0;
 	surfaceInput.metallic = 0;
 	surfaceInput.smoothness = 0;

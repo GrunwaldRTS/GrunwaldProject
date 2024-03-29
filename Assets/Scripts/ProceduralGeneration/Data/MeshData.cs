@@ -116,6 +116,7 @@ public class MeshData
 		mesh.name = "ChunkMesh";
 		mesh.vertices = Verticies;
 		mesh.triangles = Triangles;
+		mesh.uv = Uvs;
 		mesh.normals = CalculateNormals();
 
 		return mesh;

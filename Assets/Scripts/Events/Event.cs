@@ -87,6 +87,10 @@ public class Event<T, T1, T2, T3>
 	}
 	public void Invoke(T value, T1 value1, T2 value2, T3 value3)
 	{
-		listeners(value, value1, value2, value3);
+		listeners(
+			value,
+			value1,
+			value2,
+			value3);
 	}
 }

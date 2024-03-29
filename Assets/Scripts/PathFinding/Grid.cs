@@ -51,13 +51,13 @@ public class Grid : MonoBehaviour
 				worldPos.y = hit.point.y;
 				//Debug.DrawRay(ray.origin, ray.direction * 1000f, Color.gray, 1000f);
 				bool walkable = hit.point.y >= terrainPreset.WaterLevel + waterMargin;
-				int penalty = walkable ? 0 : 50;
+				int penalty = walkable ? 0 : 80;
 
 				gridNodes[x, y] = new Node(walkable, position, worldPos, penalty);
 			}
 		}
 
-		BlurPenaltyMap(5);
+		BlurPenaltyMap(4);
 	}
 	public int GetGridSize() => gridNodes.Length;
 	public Node GetNodeFromWorldPosition(Vector3 position)

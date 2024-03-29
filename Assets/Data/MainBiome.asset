@@ -15,6 +15,8 @@ MonoBehaviour:
   biomeName: FlatTerrain
   grassesData:
   - mesh: {fileID: 2949893962580367973, guid: be34da9738a93214fa0ad72c1f827993, type: 3}
+    lodMesh: {fileID: 2949893962580367973, guid: 3fae4933571178a418a070cdf6b397d3,
+      type: 3}
     material: {fileID: 2100000, guid: eaafed4066dd5e146860f87fef97cf47, type: 2}
     scale: {x: 0.5, y: 0.5, z: 0.5}
     density: 1

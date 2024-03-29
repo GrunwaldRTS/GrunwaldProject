@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.AI.Navigation;
 using System.Linq;
+using Unity.VisualScripting;
+using static UnityEditor.PlayerSettings;
+using System.IO;
 
 public class ChunkMeshesInstancer : MonoBehaviour
 {
@@ -13,21 +16,20 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	[SerializeField][Range(1, 6)] int bridgesCount = 3;
 	[Header("Grass")]
 	[SerializeField] float grassHeightThreshold = 12f;
-	[SerializeField][Range(1, 8)] int grassChunkSizeModifier = 4;
-	[SerializeField][Range(1, 8)] int density = 4;
-	[SerializeField] float windSpeed = 1f;
-	[SerializeField] float windFrequency = 20f;
-	[SerializeField] float windAmplitude = 3f;
-	[SerializeField] float addValue = 1f;
-	[SerializeField][Range(1, 10)] int grassRenderDistance = 1;
-	[SerializeField] RenderTexture animationTexture;
+	[SerializeField][Range(1, 8)] int grassChunkSizeModifier = 8;
+	[SerializeField][Range(1, 8)] int density = 3;
+	[SerializeField] GrassAnimationPreset grassAnimationPreset;
+	[SerializeField][Range(1, 10)] int grassRenderDistance = 7;
 	[Header("TrailsGeneration")]
+	[SerializeField]
+	[Range(1, 3)] int pathInterpolation = 2;
 	[SerializeField] Transform point1;
 	[SerializeField] Transform point2;
 
     ComputeShader grassPositionsShader;
 	ComputeShader animationMapShader;
 	ComputeShader cullGrassUnderWaterShader;
+	ComputeShader pathTextureShader;
 
 	ComputeBuffer voteBuffer;
 	ComputeBuffer prescanBuffer;
@@ -40,7 +42,9 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	Dictionary<string, Dictionary<Vector2, GrassData>> grassesData = new();
 	List<GameObject> trees = new();
 	Vector2Int[] riversPoints;
-	int animationTextureResolution = 1024;
+
+    RenderTexture animationTexture;
+    int animationTextureResolution = 1024;
 	int pathTextureResolution = 512;
 
 	Vector2 terrainSize;
@@ -60,14 +64,13 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 	List<ComputeBuffer> propertiesBuffers = new();
 	List<ComputeBuffer> argsBuffers = new();
+	List<RenderTexture> pathTextures = new();
 
 	List<Vector2> villagesPositions;
-
-    Grid grid;
-
 	List<Vector3> pathPositions = new();
 
 	PathFinding pathfinding;
+    Grid grid;
 
 	enum TerrainCheckType
 	{
@@ -82,6 +85,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		grassPositionsShader = Resources.Load<ComputeShader>("GrassPositionsShader");
 		animationMapShader = Resources.Load<ComputeShader>("AnimationMapShader");
 		cullGrassUnderWaterShader = Resources.Load<ComputeShader>("CullGrassUnderWaterShader");
+		pathTextureShader = Resources.Load<ComputeShader>("PathTextureShader");
 
 		animationTexture = new(animationTextureResolution, animationTextureResolution, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
 		animationTexture.enableRandomWrite = true;
@@ -114,8 +118,14 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 		animationMapShader.SetTexture(0, "_AnimationMap", animationTexture);
 		animationMapShader.SetInt("_Resolution", animationTextureResolution);
+        animationMapShader.SetFloat("_Amplitude", grassAnimationPreset.WindAmplitude);
+        animationMapShader.SetFloat("_Frequency", grassAnimationPreset.WindFrequency);
+        animationMapShader.SetFloat("_AddValue", grassAnimationPreset.AddValue);
 
-		prescanThreadCount = 0;
+		pathTextureShader.SetInt("_Resolution", pathTextureResolution);
+		pathTextureShader.SetInt("_ChunkSize", terrainPreset.ChunkSize);
+
+        prescanThreadCount = 0;
 		int grassCountCopy = grassChunkGrassCount / 2;
 
 		while(grassCountCopy > 0 )
@@ -139,6 +149,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		groupSumBuffer = new(groupSumScanThreadBlocksCount, sizeof(uint));
 		offsetBuffer = new(1024, sizeof(uint));
 	}
+
 	void EnableRendering(ChunkDataProvider chunkDataProvider, Dictionary<Vector2Int, Chunk> chunks, Vector2Int[] riversPoints, Dictionary<Vector2Int, float> globalHeightMap)
 	{
 		this.chunkDataProvider = chunkDataProvider;
@@ -146,18 +157,81 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		this.riversPoints = riversPoints;
 		this.globalHeightMap = globalHeightMap;
 
-		CalculateGrassPositions();
 		InstantiateTrees(40);
 		GenerateVillages(5, 15, 200, 35);
 		//InstantiateBridges(bridgesCount);
 		pathfinding = new PathFinding(grid);
 		GeneratePaths();
+		GeneratePathTextures();
+		CalculateGrassPositions();
 
-		navSurface.BuildNavMesh();
+		//navSurface.BuildNavMesh();
 
 		EventManager.OnChunkMeshesInstanced.Invoke();
 		areMeshesInstanced = true;
 	}
+	void GeneratePathTextures()
+	{
+		foreach(KeyValuePair<Vector2Int, Chunk> keyValuePair in chunks)
+		{
+			Chunk chunk = keyValuePair.Value;
+
+            RenderTexture pathTexture = new(pathTextureResolution, pathTextureResolution, 0);
+            pathTexture.enableRandomWrite = true;
+            pathTexture.Create();
+
+			if (chunk.IsChunkInBoundsOfPoints(pathPositions))
+			{
+				//Debug.Log("inside");
+				List<Vector3> positions = pathPositions.Where(point => chunk.IsPointInBoundOfChunk(point, 20f)).ToList();
+				positions = InterpolatePoints(positions, pathInterpolation);
+
+				ComputeBuffer positionsBuffer = new(positions.Count, sizeof(float) * 3);
+				positionsBuffer.SetData(positions);
+
+				pathTextureShader.SetInt("_PathPointsLength", positions.Count);
+				pathTextureShader.SetBuffer(0, "_PathPoints", positionsBuffer);
+				pathTextureShader.SetFloats("_ChunkPosition", new float[] { chunk.Position.x - terrainPreset.ChunkSize / 2f, chunk.Position.y - terrainPreset.ChunkSize / 2f });
+				pathTextureShader.SetTexture(0, "_PathTexture", pathTexture);
+				pathTextureShader.Dispatch(0, Mathf.CeilToInt(pathTextureResolution / 8f), Mathf.CeilToInt(pathTextureResolution / 8f), 1);
+
+                pathTextures.Add(pathTexture);
+                chunk.PathTexture = pathTexture;
+            }
+            pathTextures.Add(pathTexture);
+            chunk.PathTexture = pathTexture;
+        }
+    }
+	List<Vector3> InterpolatePoints(List<Vector3> points, int interpolationMultiplier)
+	{
+		List<Vector3> result = new();
+
+        for (int i = 1; i < points.Count; i++)
+        {
+            Vector3 previousPos = points[i - 1];
+            Vector3 currentPos = points[i];
+
+            float increment = 1f / interpolationMultiplier;
+
+            for (float j = increment; j < 1; j += increment)
+            {
+                Vector3 pos = Vector3.Lerp(previousPos, currentPos, j);
+
+                result.Add(pos);
+                Debug.DrawRay(pos, Vector3.up * 100f, Color.red, 1000f);
+            }
+
+            Debug.DrawRay(currentPos, Vector3.up * 100f, Color.red, 1000f);
+            result.Add(currentPos);
+            if (i == 0)
+            {
+                Debug.DrawRay(previousPos, Vector3.up * 100f, Color.red, 1000f);
+                result.Add(previousPos);
+            }
+        }
+
+		return result;
+    }
 	void CalculateGrassPositions()
 	{
 		Vector2 centerOffset = new Vector2(
@@ -251,21 +325,6 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 								meshPropertiesBuffer.Release();
 
-        //                        RenderTexture pathTexture = new(pathTextureResolution, pathTextureResolution, 0);
-								//pathTexture.enableRandomWrite = true;
-								//pathTexture.Create();
-
-								//if (chunk.IsChunkInBoundsOfPoints(pathPositions))
-								//{
-								//	List<Vector3> positions = pathPositions.Where(point => chunk.IsPointInBoundOfChunk(point)).ToList();
-								
-								//	ComputeBuffer positionsBuffer = new(positions.Count, sizeof(float) * 3);
-								//	positionsBuffer.SetData(positions);
-
-
-								//}
-
-
 								material.SetBuffer("_Properties", culledMeshPropertiesBuffer);
 								material.SetTexture("_WindTex", animationTexture);
 								Color albedo = Random.ColorHSV();
@@ -276,7 +335,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 								{
 									grassesData[biome.BiomeName] = new();
 								}
-
+								//Debug.Log("kys");
 								grassesData[biome.BiomeName][chunkPosition] = new GrassData(
 									biome.BiomeName,
 									grassData.mesh,
@@ -488,7 +547,9 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	}
 	void GeneratePaths()
 	{
-		foreach(Node node in pathfinding.FindPath(point1.position, point2.position))
+		List<Node> path = pathfinding.FindPath(point1.position, point2.position);
+
+		foreach(Node node in path)
 		{
 			pathPositions.Add(node.WorldPos);
 		}
@@ -506,61 +567,42 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 		RenderAnimationTexture();
 
-		int i = 0;
-		foreach (KeyValuePair<Vector2, GrassData> pair in grassesData["FlatTerrain"])
-		{
-			//if (i != 0) return;
+		//int i = 0;
+		//foreach (KeyValuePair<Vector2, GrassData> pair in grassesData["FlatTerrain"])
+		//{
+		//	//if (i != 0) return;
 
-			GrassData data = pair.Value;
+		//	GrassData data = pair.Value;
 
-			Graphics.DrawMeshInstancedIndirect(data.Mesh, 0, data.Material, data.Bounds, data.ArgsBuffer);
-			i++;
-		}
+		//	Graphics.DrawMeshInstancedIndirect(data.Mesh, 0, data.Material, data.Bounds, data.ArgsBuffer);
+		//	i++;
+		//}
 		RenderGrassMeshes();
 	}
 	void RenderAnimationTexture()
 	{
-		animationMapShader.SetFloat("_Time", Time.time * windSpeed);
-		animationMapShader.SetFloat("_Amplitude", windAmplitude);
-		animationMapShader.SetFloat("_Frequency", windFrequency);
-		animationMapShader.SetFloat("_AddValue", addValue);
+		animationMapShader.SetFloat("_Time", Time.time * grassAnimationPreset.WindSpeed);
 		animationMapShader.Dispatch(0, animationTextureResolution, animationTextureResolution, 1);
 	}
 	void RenderGrassMeshes()
 	{
 		Vector3 playerPos = playerTransform.position;
+		Vector2 playerPos2D = new Vector2(playerPos.x, playerPos.z);
 
-		//Vector2 currentChunkPos = new Vector2(Mathf.Floor(playerPos.x / grassChunkSizeRounded), Mathf.Floor(playerPos.z / grassChunkSizeRounded));
-		////Debug.Log(currentChunkPos);
-		////currentChunkPos;
+        foreach (KeyValuePair<Vector2, GrassData> pair in grassesData["FlatTerrain"])
+		{
+			GrassData data = pair.Value;
 
-		//foreach(BiomePreset biome in biomes)
-		//{
-		//	if(grassRenderDistance == 1)
-		//	{
-		//		RenderMeshes(new Vector2(0, 0), currentChunkPos, biome);
-		//	}
-		//	else
-		//	{
-		//		int renderDistance = grassRenderDistance - 1;
-		//		for (int yOffset = -renderDistance; yOffset <= renderDistance; yOffset++)
-		//		{
-		//			for (int xOffset = -renderDistance; xOffset <= renderDistance; xOffset++)
-		//			{
-		//				RenderMeshes(new Vector2(xOffset, yOffset), currentChunkPos, biome);
-		//			}
-		//		}
-		//	}
-		//}
-		//foreach (KeyValuePair<Vector2, GrassData> pair in grassesData["FlatTerrain"])
-		//{
-		//	GrassData data = pair.Value;
+			if (Vector2.Distance(pair.Key, playerPos2D) < grassRenderDistance * grassChunkSizeRounded)
+			{
+				//Vector3 playerToChunk = (new Vector3(pair.Key.x, 0, pair.Key.y) - new Vector3(playerPos.x, 0, playerPos.z)).normalized;
 
-		//	if(Vector2.Distance(pair.Key, new Vector2(playerPos.x, playerPos.z)) < grassRenderDistance * grassChunkSizeRounded)
-		//	{
-		//		Graphics.DrawMeshInstancedIndirect(data.Mesh, 0, data.Material, data.Bounds, data.ArgsBuffer);
-		//	}
-		//}
+				Graphics.DrawMeshInstancedIndirect(data.Mesh, 0, data.Material, data.Bounds, data.ArgsBuffer);
+				//if (Vector3.Dot(playerTransform.forward, playerToChunk) > 0.3f)
+				//{
+				//}
+			}
+		}
 	}
 	void RenderMeshes(Vector2 offset, Vector2 currentChunkPos, BiomePreset biome)
 	{
@@ -579,8 +621,6 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	}
 	void OnDisable()
 	{
-		grassesData = null;
-
 		if (propertiesBuffers != null)
 		{
 			foreach (ComputeBuffer propertiesBuffer in propertiesBuffers)
@@ -600,7 +640,16 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		argsBuffers = null;
 		grassesData = null;
 
-		voteBuffer.Release();
+        if (pathTextures != null)
+        {
+            foreach (RenderTexture pathTexture in pathTextures)
+            {
+                pathTexture.Release();
+            }
+        }
+        pathTextures = null;
+
+        voteBuffer.Release();
 		prescanBuffer.Release();
 		offsetBuffer.Release();
 		groupSumBuffer.Release();

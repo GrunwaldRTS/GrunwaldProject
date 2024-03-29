@@ -15,16 +15,25 @@ public class Chunk
     public MeshRenderer MeshRenderer { get; private set; }
 	public MeshFilter MeshFilter { get; private set; }
     public MeshCollider Collider { get; private set; }
+	RenderTexture _pathTexture;
+	public RenderTexture PathTexture { 
+		get => _pathTexture; 
+		set 
+		{ 
+			Material.SetTexture("_PathMap", value);
+			_pathTexture = value; 
+		} 
+	}
     public float[,] HeightMap { get; set; }
     public bool Visible 
 	{ 
 		get => MeshHolder.activeSelf;
-		set => MeshHolder.SetActive(value);
+		set => MeshHolder.SetActive(true);
 	}
     public Chunk(Vector2Int position, Material material, Transform parent, ChunkDataProvider chunkDataProvider)
     {
 		Position = position;
-		this.Material = material;
+		Material = new Material(material);
 		Parent = parent;
 		DataProvider = chunkDataProvider;
 
@@ -36,7 +45,7 @@ public class Chunk
 		MeshHolder.transform.position = new Vector3(Position.x, 0, Position.y);
 		
 		MeshRenderer = MeshHolder.AddComponent<MeshRenderer>();
-		this.MeshRenderer.sharedMaterial = material;
+		MeshRenderer.sharedMaterial = Material;
 		MeshFilter = MeshHolder.AddComponent<MeshFilter>();
 		Collider = MeshHolder.AddComponent<MeshCollider>();
 		MeshHolder.layer = LayerMask.NameToLayer("Ground");
@@ -70,18 +79,18 @@ public class Chunk
 
         return false;
     }
-    public bool IsPointInBoundOfChunk(Vector3 point)
+    public bool IsPointInBoundOfChunk(Vector3 point, float margin = 0)
     {
-        return IsPointInBoundOfChunk(new Vector2(point.x, point.z));
+        return IsPointInBoundOfChunk(new Vector2(point.x, point.z), margin);
     }
-    public bool IsPointInBoundOfChunk(Vector2 point)
+    public bool IsPointInBoundOfChunk(Vector2 point, float margin = 0)
 	{
 		int chunkSize = DataProvider.MeshData.Size;
 		int halfChunkSize = chunkSize / 2;	
         Vector4 bounds = new(Position.x + halfChunkSize, Position.x - halfChunkSize, Position.y + halfChunkSize, Position.y - halfChunkSize);
 
-		bool xInBounds = point.x <= bounds.x && point.x >= bounds.y;
-		bool yInBounds = point.y <= bounds.z && point.y >= bounds.w;
+		bool xInBounds = point.x <= bounds.x + margin && point.x >= bounds.y - margin;
+		bool yInBounds = point.y <= bounds.z + margin && point.y >= bounds.w - margin;
 
 		return xInBounds && yInBounds;
 	}
