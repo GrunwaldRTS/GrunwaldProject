@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "ProceduralTerrainPreset", menuName = "ScriptableObjects/ProceduralTerrainPreset")]
+[CreateAssetMenu(fileName = "ProceduralTerrainPreset", menuName = "ScriptableObjects/ProceduralGeneration/ProceduralTerrainPreset")]
 public class ProceduralTerrainPreset : ScriptableObject
 {
 	[Header("Terrain")]

@@ -1707,7 +1707,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 935187795}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -424.9, y: 0, z: -96.8}
+  m_LocalPosition: {x: -401.1, y: 0, z: 247.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1770,11 +1770,12 @@ MonoBehaviour:
   bridgesCount: 3
   grassHeightThreshold: 13.5
   grassChunkSizeModifier: 8
-  density: 3
+  density: 2
   grassAnimationPreset: {fileID: 11400000, guid: f28918bb0030ba54e9c7cb71ed3c9038,
     type: 2}
   grassRenderDistance: 7
-  pathInterpolation: 2
+  pathGenerationPreset: {fileID: 11400000, guid: b43cc25093383a24ba1121b82b280b5c,
+    type: 2}
   point1: {fileID: 1031774479}
   point2: {fileID: 935187796}
 --- !u!114 &976682925
@@ -1873,7 +1874,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1031774478}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 349.1, y: 15.24, z: 151.6}
+  m_LocalPosition: {x: -31.2, y: 15.24, z: -80.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

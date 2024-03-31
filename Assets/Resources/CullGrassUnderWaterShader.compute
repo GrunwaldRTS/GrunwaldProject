@@ -1,4 +1,11 @@
+//#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+
 #pragma kernel Vote
+float Remap(float value, float inMin, float inMax, float outMin, float outMax)
+{
+    return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
+}
+
 #pragma kernel Scan
 #pragma kernel ScanGroupSums
 #pragma kernel Compact
@@ -9,6 +16,13 @@ struct MeshProperties{
 	float4 position;
 	float2 worldUV;
 };
+
+int _TerrainChunkSize;
+int _PathTextureResolution;
+int _GrassChunkResolution;
+float _GrassChunkSize;
+float2 _WorldOffset;
+RWTexture2D<float4> _PathTexture;
 
 RWStructuredBuffer<uint> _ArgsBuffer;
 RWStructuredBuffer<MeshProperties> _Properties;
@@ -26,24 +40,32 @@ int _NumOfGroups;
 int _GrassCount;
 float _WaterTreshold;
 
-float Remap(float value, float inMin, float inMax, float outMin, float outMax){
-	return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
-}
-float Remap(float3 value, float inMin, float inMax, float outMin, float outMax){
-	return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
-}
-float Remap(float4 value, float4 inMin, float4 inMax, float4 outMin, float4 outMax){
-	return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
+uint RemapCoordinate(float coordinate)
+{
+    return Remap(coordinate, 0, _TerrainChunkSize, 0, _PathTextureResolution);
 }
 
 [numthreads(128,1,1)]
 void Vote (uint3 id : SV_DispatchThreadID)
 {
-	float4 position = _Properties[id.x].position;
-
-	bool inLandRange = position.y > _WaterTreshold;
-
-	_VoteBuffer[id.x] = inLandRange;
+    if (id.x < (uint) _GrassChunkResolution * (uint) _GrassChunkResolution)
+    {
+        float2 uv = float2(fmod(id.x, _GrassChunkResolution), id.x / (float) _GrassChunkResolution);
+        uv /= _GrassChunkResolution;
+        
+        float2 worldPos = uv * _GrassChunkSize;
+        uint2 textureOffset = uint2(RemapCoordinate(_WorldOffset.x), RemapCoordinate(_WorldOffset.y));
+        uint2 texturePos = uint2(RemapCoordinate(worldPos.x), RemapCoordinate(worldPos.y)) + textureOffset;
+        texturePos.x = _PathTextureResolution - texturePos.x;
+        texturePos.y = _PathTextureResolution - texturePos.y;
+        
+        float4 textureValue = _PathTexture[texturePos];
+        float4 grassPosition = _Properties[id.x].position;
+        
+        bool inLandRange = grassPosition.y > _WaterTreshold && textureValue.x < 0.3f;
+	
+	    _VoteBuffer[id.x] = inLandRange;
+    }
 }
 
 // From GPU Gems Chapter 39 'Parallel Prefix Sum (Scan) with CUDA'

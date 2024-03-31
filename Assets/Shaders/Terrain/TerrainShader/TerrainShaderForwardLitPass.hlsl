@@ -33,6 +33,8 @@ StructuredBuffer<Height> _Heights;
 TEXTURE2D(_PathMap);
 SAMPLER(sampler_PathMap);
 
+float4 _PathColor;
+
 Interpolators Vertex(Attributes input){
 	Interpolators output;
 	
@@ -70,14 +72,16 @@ float4 Fragment(Interpolators input) : SV_TARGET{
 		index = input.positionWS.y > _Heights[i].startHeight? i : index;
 	}
 
-	float3 albedo = _Heights[index].albedo;
+	float3 albedo = _Heights[index].albedo.rgb;
 
-	if(index + 1 < _HeightsCount){
-		float height = saturate(Remap(input.positionWS.y, _Heights[index].startHeight, _Heights[index].endHeight, 0, 1));
-		albedo = lerp(albedo, _Heights[index + 1].albedo.rgb, height);
-	}
+    if (index + 1 < _HeightsCount)
+    {
+        float height = saturate(Remap(input.positionWS.y, _Heights[index].startHeight, _Heights[index].endHeight, 0, 1));
+        albedo = lerp(albedo, _Heights[index + 1].albedo.rgb, height);
+    }
 	
     float4 pathMask = SAMPLE_TEXTURE2D(_PathMap, sampler_PathMap, input.uv);
+    albedo = lerp(albedo, _PathColor.rgb, pathMask.rgb);
 
 	InputData lightingData = (InputData)0;
 	lightingData.positionWS = input.positionWS;
@@ -87,7 +91,7 @@ float4 Fragment(Interpolators input) : SV_TARGET{
 	lightingData.bakedGI = SAMPLE_GI(input.lightmapUV, input.vertexSH, input.normalWS);
 
 	SurfaceData surfaceInput;
-	surfaceInput.albedo = pathMask.rgb;
+    surfaceInput.albedo = albedo.rgb;
 	surfaceInput.specular = 0;
 	surfaceInput.metallic = 0;
 	surfaceInput.smoothness = 0;

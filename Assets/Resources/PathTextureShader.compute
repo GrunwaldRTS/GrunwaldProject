@@ -104,6 +104,10 @@ RWStructuredBuffer<float3> _PathPoints;
 int _Resolution, _PathPointsLength, _ChunkSize;
 float2 _ChunkPosition;
 
+int _Octaves;
+float _Scale, _Lacunarity, _Persistance, _NoiseImpact;
+float3 _OffsetIncrement;
+
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
@@ -124,12 +128,27 @@ void CSMain (uint3 id : SV_DispatchThreadID)
             closestDistance = pointDistance < closestDistance ? pointDistance : closestDistance;
         }
         
-        float pathMask = saturate(Remap(closestDistance, 0, 10, 1, 0));
-        pathMask = smoothstep(0.2f, 0.8f, pathMask);
-        pathMask *= snoise(worldPos / 5.0f);
-        //pathMask = saturate(pathMask);
+        float noiseValue = 0.0f;
+        float frequency = 1.0f;
+        float amplitude = 1.0f;
+        float3 offset = (float3) 0;
+
+        for (int j = 0; j < _Octaves; j++)
+        {
+            float sampleX = worldPos.x / _Scale * frequency;
+            float sampleZ = worldPos.z / _Scale * frequency;
+            
+            noiseValue += snoise(float3(sampleX, 0, sampleZ) + offset) * amplitude;
+
+            frequency *= _Lacunarity;
+            amplitude *= _Persistance;
+            offset += _OffsetIncrement;
+        }
         
-        //closestDistance *= snoise(worldPos);
+        float pathMask = saturate(Remap(closestDistance, 0, 10, 1, 0));
+        pathMask = smoothstep(0.3f, 0.8f, pathMask);
+        pathMask *= noiseValue * _NoiseImpact + (1.0f - _NoiseImpact);
+        pathMask = saturate(pathMask);
 
         _PathTexture[id.xy] = float4(pathMask.xxx, 1);
     }

@@ -2,6 +2,7 @@ Shader "Custom/TerrainShader"
 {
     Properties
     {
+        _PathColor("PathColor", Color) = (1.0, 1.0, 1.0, 1.0)
     }
     SubShader
     {

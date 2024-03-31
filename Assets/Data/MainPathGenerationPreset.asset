@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1818473c925a9cf45908eeaa20af1c75, type: 3}
+  m_Name: MainPathGenerationPreset
+  m_EditorClassIdentifier: 
+  _pathInterpolation: 3
+  _scale: 7.2
+  _octaves: 10
+  _lacunarity: 1.35
+  _persistance: 0.834
+  _offsetIncrement: {x: 5.16, y: 0, z: 4.93}
+  _noiseImpact: 0.097
+  _pathColor: {r: 0.5566038, g: 0.52339274, b: 0.3964489, a: 0}

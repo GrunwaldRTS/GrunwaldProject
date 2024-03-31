@@ -45,7 +45,7 @@ public class Chunk
 		MeshHolder.transform.position = new Vector3(Position.x, 0, Position.y);
 		
 		MeshRenderer = MeshHolder.AddComponent<MeshRenderer>();
-		MeshRenderer.sharedMaterial = Material;
+		MeshRenderer.material = Material;
 		MeshFilter = MeshHolder.AddComponent<MeshFilter>();
 		Collider = MeshHolder.AddComponent<MeshCollider>();
 		MeshHolder.layer = LayerMask.NameToLayer("Ground");
@@ -60,6 +60,11 @@ public class Chunk
 		Collider.sharedMesh = TerrainMesh;
 
 		EventManager.OnChunkGenerationCompleated.Invoke();
+	}
+	public void SetTerrainHeights(ComputeBuffer heightsBuffer, int heightsCount)
+	{
+		Material.SetInt("_HeightsCount", heightsCount);
+		Material.SetBuffer("_Heights", heightsBuffer);
 	}
 	public bool IsChunkInBoundsOfPoints(List<Vector3> points)
 	{

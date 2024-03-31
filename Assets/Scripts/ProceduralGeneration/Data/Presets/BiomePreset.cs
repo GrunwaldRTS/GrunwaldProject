@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "BiomePreset", menuName = "ScriptableObjects/BiomePreset")]
+[CreateAssetMenu(fileName = "BiomePreset", menuName = "ScriptableObjects/ProceduralGeneration/BiomePreset")]
 public class BiomePreset : ScriptableObject
 {
 	[SerializeField] string biomeName;

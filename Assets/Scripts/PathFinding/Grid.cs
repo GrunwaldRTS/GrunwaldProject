@@ -151,13 +151,13 @@ public class Grid : MonoBehaviour
 	}
 	private void OnDrawGizmos()
 	{
-		if (gridNodes != null)
-		{
-			foreach (Node node in gridNodes)
-			{
-				Gizmos.color = node.Walkable ? Color.white : Color.red;
-				Gizmos.DrawWireCube(node.WorldPos + new Vector3(0.5f, 0, 0.5f), new Vector3(0.9f, /*Mathf.Lerp(1, 5, Mathf.InverseLerp(penaltyMin, penaltyMax, node.MovementPenalty))*/node.MovementPenalty, 0.9f));
-			}
-		}
+		//if (gridNodes != null)
+		//{
+		//	foreach (Node node in gridNodes)
+		//	{
+		//		Gizmos.color = node.Walkable ? Color.white : Color.red;
+		//		Gizmos.DrawWireCube(node.WorldPos + new Vector3(0.5f, 0, 0.5f), new Vector3(0.9f, /*Mathf.Lerp(1, 5, Mathf.InverseLerp(penaltyMin, penaltyMax, node.MovementPenalty))*/node.MovementPenalty, 0.9f));
+		//	}
+		//}
 	}
 }

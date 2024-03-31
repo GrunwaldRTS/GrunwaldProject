@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "GrassAnimationPreset", menuName ="ScriptableObjects/GrassAnimationPreset")]
+[CreateAssetMenu(fileName = "GrassAnimationPreset", menuName = "ScriptableObjects/ProceduralGeneration/GrassAnimationPreset")]
 public class GrassAnimationPreset : ScriptableObject
 {
     [SerializeField] float _windSpeed = 0.6f;
