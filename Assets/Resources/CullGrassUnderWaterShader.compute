@@ -17,6 +17,7 @@ struct MeshProperties{
 	float2 worldUV;
 };
 
+bool _IsInRangeOfPaths;
 int _TerrainChunkSize;
 int _PathTextureResolution;
 int _GrassChunkResolution;
@@ -50,21 +51,32 @@ void Vote (uint3 id : SV_DispatchThreadID)
 {
     if (id.x < (uint) _GrassChunkResolution * (uint) _GrassChunkResolution)
     {
-        float2 uv = float2(fmod(id.x, _GrassChunkResolution), id.x / (float) _GrassChunkResolution);
-        uv /= _GrassChunkResolution;
+        if (_IsInRangeOfPaths)
+        {
+            float2 uv = float2(fmod(id.x, _GrassChunkResolution), id.x / (float) _GrassChunkResolution);
+            uv /= _GrassChunkResolution;
         
-        float2 worldPos = uv * _GrassChunkSize;
-        uint2 textureOffset = uint2(RemapCoordinate(_WorldOffset.x), RemapCoordinate(_WorldOffset.y));
-        uint2 texturePos = uint2(RemapCoordinate(worldPos.x), RemapCoordinate(worldPos.y)) + textureOffset;
-        texturePos.x = _PathTextureResolution - texturePos.x;
-        texturePos.y = _PathTextureResolution - texturePos.y;
+            float2 worldPos = uv * _GrassChunkSize;
+            uint2 textureOffset = uint2(RemapCoordinate(_WorldOffset.x), RemapCoordinate(_WorldOffset.y));
+            uint2 texturePos = uint2(RemapCoordinate(worldPos.x), RemapCoordinate(worldPos.y)) + textureOffset;
+            texturePos.x = _PathTextureResolution - texturePos.x;
+            texturePos.y = _PathTextureResolution - texturePos.y;
         
-        float4 textureValue = _PathTexture[texturePos];
-        float4 grassPosition = _Properties[id.x].position;
+            float4 textureValue = _PathTexture[texturePos];
+            float4 grassPosition = _Properties[id.x].position;
         
-        bool inLandRange = grassPosition.y > _WaterTreshold && textureValue.x < 0.3f;
+            bool inLandRange = grassPosition.y > _WaterTreshold && textureValue.x < 0.3f;
 	
-	    _VoteBuffer[id.x] = inLandRange;
+            _VoteBuffer[id.x] = inLandRange;
+        }
+        else
+        {
+            float4 grassPosition = _Properties[id.x].position;
+            bool inLandRange = grassPosition.y > _WaterTreshold;
+	
+            _VoteBuffer[id.x] = inLandRange;
+        }
+       
     }
 }
 

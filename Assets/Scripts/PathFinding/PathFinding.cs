@@ -16,7 +16,11 @@ public class PathFinding
 		OpenNodes = new(Grid.GetGridSize());
 		ClosedNodes = new();
 	}
-	public List<Node> FindPath(Vector3 startPos, Vector3 endPos)
+    public List<Node> FindPath(Vector2 startPos, Vector2 endPos)
+	{
+		return FindPath(new Vector3(startPos.x, 0, startPos.y), new Vector3(endPos.x, 0, endPos.y));
+	}
+    public List<Node> FindPath(Vector3 startPos, Vector3 endPos)
 	{
 		OpenNodes.Clear();
 		ClosedNodes.Clear();

@@ -23,16 +23,16 @@ MonoBehaviour:
   treesData:
   - treePrefab: {fileID: 2736999718936250401, guid: 3ad58da949d5de343b7c21cee04361ce,
       type: 3}
-    amount: 50
+    amount: 10
   - treePrefab: {fileID: 1973228233241776061, guid: d90c349721b4e694fad80a76d87b2578,
       type: 3}
-    amount: 50
+    amount: 25
   - treePrefab: {fileID: 2478019521095919142, guid: 787d900468610e0488384494dc77d1b1,
       type: 3}
-    amount: 50
+    amount: 10
   - treePrefab: {fileID: 8916932963258096687, guid: ceda9be89f930ac42b32ff5ae10598cd,
       type: 3}
-    amount: 50
+    amount: 25
   - treePrefab: {fileID: 2194115761931273664, guid: 3148b0057757c5e49a1d7284d605de90,
       type: 3}
     amount: 70

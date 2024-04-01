@@ -30,6 +30,7 @@ public class Chunk
 		get => MeshHolder.activeSelf;
 		set => MeshHolder.SetActive(true);
 	}
+    public bool IsInRangeOfPaths { get; set; }
     public Chunk(Vector2Int position, Material material, Transform parent, ChunkDataProvider chunkDataProvider)
     {
 		Position = position;
