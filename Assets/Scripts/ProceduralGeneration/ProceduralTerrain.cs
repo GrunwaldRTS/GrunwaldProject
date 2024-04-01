@@ -5,6 +5,7 @@ using UnityEngine.Rendering;
 
 public class ProceduralTerrain : MonoBehaviour
 {
+	[SerializeField][Range(1, 8)] float renderDistance = 1.5f;
 	[SerializeField] GameObject player;
 	[SerializeField] ProceduralTerrainPreset preset;
 
@@ -14,17 +15,15 @@ public class ProceduralTerrain : MonoBehaviour
 
 	int chunksLoaded = 0;
 	bool areChunksLoaded;
-	void MakeChunksInvisible()
-	{
-		UpdateChunksVisibility();
-	}
+	
 	void Start()
 	{
 		Application.targetFrameRate = 240;
 
 		chunkDataProvider = new ChunkDataProvider(
 			new NoiseInputData(preset.TerrainSize, preset.ChunkSize + 1, preset.LevelOfDetail, preset.HeightMultiplier, preset.NoiseInfo),
-			new MeshInputData(preset.ChunkSize, preset.LevelOfDetail, new float[0, 0], preset.HeightMultiplier)
+			new MeshInputData(preset.ChunkSize, preset.LevelOfDetail, new float[0, 0], preset.HeightMultiplier),
+			gameObject
 		);
 
 		EventManager.OnChunkGenerationCompleated.AddListener(OnChunkLoaded);
@@ -32,7 +31,11 @@ public class ProceduralTerrain : MonoBehaviour
 
 		GenerateChunks();
 	}
-	void OnChunkLoaded()
+    void MakeChunksInvisible()
+    {
+        areChunksLoaded = true;
+    }
+    void OnChunkLoaded()
 	{
 		chunksLoaded++;
 
@@ -40,8 +43,6 @@ public class ProceduralTerrain : MonoBehaviour
 
 		if (chunksLoaded == preset.TerrainSize.x * preset.TerrainSize.y)
 		{
-			areChunksLoaded = true;
-
 			Debug.Log("Chunks loaded!");
 
 			EventManager.OnChunksGenerationCompleated.Invoke(chunkDataProvider, chunks, chunkDataProvider.RiversPoints, chunkDataProvider.GlobalHeightMap);
@@ -50,7 +51,7 @@ public class ProceduralTerrain : MonoBehaviour
 	void GenerateChunks()
 	{
 		Vector2 centerOffset = new Vector2((preset.TerrainSize.x * preset.ChunkSize / 2f) - preset.ChunkSize / 2f, (preset.TerrainSize.y * preset.ChunkSize / 2f) - preset.ChunkSize / 2f);
-		Debug.Log($"centerOffset: {centerOffset}");
+
 		for (int y = 0; y < preset.TerrainSize.y; y++)
 		{
 			for (int x = 0; x < preset.TerrainSize.x; x++)
@@ -64,25 +65,22 @@ public class ProceduralTerrain : MonoBehaviour
 	private void Update()
 	{
 		if (!areChunksLoaded) return;
-		//UpdateChunksVisibility();
+		UpdateChunksVisibility();
 	}
 	void UpdateChunksVisibility()
 	{
-		//Debug.Log("update");
 		Vector3 playerPos = player.transform.position;
 
-		int renderDistance = preset.RenderDistance * preset.ChunkSize;
+		float realRenderDistance = renderDistance * preset.ChunkSize;
 
 		foreach (KeyValuePair<Vector2Int, Chunk> keyValuePair in chunks)
 		{
 			Chunk chunk = keyValuePair.Value;
 
-			//Debug.Log($"{Vector2.Distance(chunk.Position, currentChunkPos)} < {renderDistance}");
-			if (Vector2.Distance(chunk.Position, new Vector2(playerPos.x, playerPos.z)) < renderDistance)
+			if (Vector2.Distance(chunk.Position, new Vector2(playerPos.x, playerPos.z)) < realRenderDistance)
 			{
 				if (!chunk.Visible)
 				{
-					//Debug.Log("visible");
 					chunk.Visible = true;
 				}
 			}
@@ -90,7 +88,6 @@ public class ProceduralTerrain : MonoBehaviour
 			{
 				if (chunk.Visible)
 				{
-					//Debug.Log("invisible");
 					chunk.Visible = false;
 				}
 			}

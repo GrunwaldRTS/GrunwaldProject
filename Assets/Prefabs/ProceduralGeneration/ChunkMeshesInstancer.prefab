@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 6760445407525134293}
   - component: {fileID: 6760445407525134295}
   - component: {fileID: 6760445407525134288}
-  - component: {fileID: 6760445407525134289}
   m_Layer: 0
   m_Name: ChunkMeshesInstancer
   m_TagString: Untagged
@@ -57,14 +56,11 @@ MonoBehaviour:
   grassHeightThreshold: 13.45
   grassChunkSizeModifier: 4
   density: 3
-  windSpeed: 2
-  windFrequency: 0.45
-  windAmplitude: 0.2
-  addValue: 0
+  grassAnimationPreset: {fileID: 0}
   grassRenderDistance: 4
-  animationTexture: {fileID: 0}
-  point1: {fileID: 0}
-  point2: {fileID: 0}
+  simplification: 0
+  waterMargin: 0
+  pathGenerationPreset: {fileID: 0}
 --- !u!114 &6760445407525134295
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -108,18 +104,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   data: {fileID: 11400000, guid: 1eda392bc112c9849b28a7696ecea717, type: 2}
---- !u!114 &6760445407525134289
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6760445407525134292}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 849bf9cbf1c98b84a95fcd87c0c085da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  simplification: 2
-  waterMargin: 4
-  terrainPreset: {fileID: 11400000, guid: 8ac5125677cf47d48834fa6714c3f9f7, type: 2}

@@ -8,9 +8,11 @@ using UnityEngine;
 
 public class ChunkDataProvider
 {
-    //noise
+    GameObject updateParent;
+    GameObject updateObject;
+    
+    //terrain
     public NoiseInputData NoiseData { get; private set; }
-    //mesh
     public MeshInputData MeshData { get; private set; }
     //threading
     public int ChunkCount { get; private set; }
@@ -18,12 +20,15 @@ public class ChunkDataProvider
     public Dictionary<Vector2Int, float> GlobalHeightMap { get; set; }
 
     Queue<ThreadInfo<MeshNoisePair, Mesh, float[,]>> meshActionPairsQueue = new();
-    public ChunkDataProvider(NoiseInputData noiseData, MeshInputData meshData)
+    public ChunkDataProvider(NoiseInputData noiseData, MeshInputData meshData, GameObject updateParent)
     {
+        this.updateParent = updateParent;
         NoiseData = noiseData;
         MeshData = meshData;
 
-        new GameObject("CDPUpdate").AddComponent<CDPUpdate>().CDP = this;
+        updateObject = new GameObject("CDPUpdate");
+        updateObject.transform.parent = updateParent.transform;
+        updateObject.AddComponent<CDPUpdate>().CDP = this;
 
         RiversPoints = Noise.GetRiversPoints(noiseData);
         GlobalHeightMap = new();

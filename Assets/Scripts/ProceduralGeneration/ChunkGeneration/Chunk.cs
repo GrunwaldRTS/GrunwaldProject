@@ -28,7 +28,7 @@ public class Chunk
     public bool Visible 
 	{ 
 		get => MeshHolder.activeSelf;
-		set => MeshHolder.SetActive(true);
+		set => MeshHolder.SetActive(value);
 	}
     public bool IsInRangeOfPaths { get; set; }
     public Chunk(Vector2Int position, Material material, Transform parent, ChunkDataProvider chunkDataProvider)

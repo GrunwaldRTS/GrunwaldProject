@@ -1683,37 +1683,6 @@ Transform:
   m_Father: {fileID: 2016556903}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &935187795
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 935187796}
-  m_Layer: 0
-  m_Name: Point2
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &935187796
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 935187795}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -401.1, y: 0, z: 247.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1513637041}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &976682922
 GameObject:
   m_ObjectHideFlags: 0
@@ -1725,7 +1694,6 @@ GameObject:
   - component: {fileID: 976682923}
   - component: {fileID: 976682925}
   - component: {fileID: 976682924}
-  - component: {fileID: 976682926}
   - component: {fileID: 976682927}
   - component: {fileID: 976682928}
   m_Layer: 0
@@ -1774,10 +1742,10 @@ MonoBehaviour:
   grassAnimationPreset: {fileID: 11400000, guid: f28918bb0030ba54e9c7cb71ed3c9038,
     type: 2}
   grassRenderDistance: 7
+  simplification: 0
+  waterMargin: 0
   pathGenerationPreset: {fileID: 11400000, guid: b43cc25093383a24ba1121b82b280b5c,
     type: 2}
-  point1: {fileID: 1031774479}
-  point2: {fileID: 935187796}
 --- !u!114 &976682925
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1790,23 +1758,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa8de126eb65fc041a5c0405cb5dfa01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  renderDistance: 0
   player: {fileID: 232081587}
   preset: {fileID: 11400000, guid: 8ac5125677cf47d48834fa6714c3f9f7, type: 2}
---- !u!114 &976682926
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 976682922}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 849bf9cbf1c98b84a95fcd87c0c085da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  simplification: 3
-  waterMargin: 0
-  terrainPreset: {fileID: 11400000, guid: 8ac5125677cf47d48834fa6714c3f9f7, type: 2}
 --- !u!114 &976682927
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1850,37 +1804,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   data: {fileID: 11400000, guid: 1eda392bc112c9849b28a7696ecea717, type: 2}
---- !u!1 &1031774478
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1031774479}
-  m_Layer: 0
-  m_Name: Point1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1031774479
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1031774478}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -31.2, y: 15.24, z: -80.3}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1513637041}
-  m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1150393902
 GameObject:
   m_ObjectHideFlags: 0
@@ -2258,8 +2181,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 976682923}
-  - {fileID: 1031774479}
-  - {fileID: 935187796}
   - {fileID: 2016556903}
   m_Father: {fileID: 0}
   m_RootOrder: 12
@@ -2769,7 +2690,7 @@ Transform:
   - {fileID: 673054854}
   - {fileID: 43300867}
   m_Father: {fileID: 1513637041}
-  m_RootOrder: 3
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2041910215
 GameObject:

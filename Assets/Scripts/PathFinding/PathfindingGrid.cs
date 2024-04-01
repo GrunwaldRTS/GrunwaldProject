@@ -1,41 +1,41 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
-public class Grid : MonoBehaviour
+public class PathfindingGrid
 {
-	[SerializeField][Range(0, 5)] int simplification = 0;
-	[SerializeField][Range(0, 10)] int waterMargin = 5;
+    public ProceduralTerrainPreset TerrainPreset { get; private set; }
+	public int Simplification { get; private set; } = 0;
+	public int WaterMargin { get; private set; } = 5;
+    public Node[,] GridNodes { get; private set; }
 	int simplificationIncrement;
-    [SerializeField] ProceduralTerrainPreset terrainPreset;
     int xNodesDimention, yNodesDimention;
-	//int i = 0;
-    Node[,] gridNodes;
 
 	int penaltyMax = int.MinValue;
 	int penaltyMin = int.MaxValue;
 
-	private void Awake()
+	public PathfindingGrid(ProceduralTerrainPreset terrainPreset, int simplification, int waterMargin)
 	{
-		simplificationIncrement = (int)Mathf.Pow(2, simplification);
+		TerrainPreset = terrainPreset;
+		Simplification = simplification;
+		WaterMargin = waterMargin;
+
+        simplificationIncrement = (int)Mathf.Pow(2, simplification);
 
         xNodesDimention = terrainPreset.TerrainSize.x * terrainPreset.ChunkSize / simplificationIncrement;
         yNodesDimention = terrainPreset.TerrainSize.y * terrainPreset.ChunkSize / simplificationIncrement;
 
-	
 		Debug.Log($"nodesDimention x: {xNodesDimention}, y: {yNodesDimention}");
-
-
-		EventManager.OnChunksGenerationCompleated.AddListener(PopulateNodes);
+	
+		PopulateNodes();
 	}
-	void PopulateNodes(ChunkDataProvider chunkDataProvider, Dictionary<Vector2Int, Chunk> chunks, Vector2Int[] riversPoints, Dictionary<Vector2Int, float> globalHeightMap)
+	void PopulateNodes()
     {
-		gridNodes = new Node[xNodesDimention, yNodesDimention];
+		GridNodes = new Node[xNodesDimention, yNodesDimention];
 
 		Vector2 centerOffset = new Vector2(
-			(terrainPreset.TerrainSize.x * terrainPreset.ChunkSize / 2f),
-			(terrainPreset.TerrainSize.y * terrainPreset.ChunkSize / 2f)
+			(TerrainPreset.TerrainSize.x * TerrainPreset.ChunkSize / 2f),
+			(TerrainPreset.TerrainSize.y * TerrainPreset.ChunkSize / 2f)
 		);
 		Debug.Log($"centerOffset: {centerOffset}");
 
@@ -50,28 +50,23 @@ public class Grid : MonoBehaviour
 				Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, LayerMask.GetMask("Ground"));
 				worldPos.y = hit.point.y;
 				//Debug.DrawRay(ray.origin, ray.direction * 1000f, Color.gray, 1000f);
-				bool walkable = hit.point.y >= terrainPreset.WaterLevel + waterMargin;
+				bool walkable = hit.point.y >= TerrainPreset.WaterLevel + WaterMargin;
 				int penalty = walkable ? 0 : 80;
 
-				gridNodes[x, y] = new Node(walkable, position, worldPos, penalty);
+				GridNodes[x, y] = new Node(walkable, position, worldPos, penalty);
 			}
 		}
 
 		BlurPenaltyMap(4);
 	}
-	public int GetGridSize() => gridNodes.Length;
+	public int GetGridSize() => GridNodes.Length;
 	public Node GetNodeFromWorldPosition(Vector3 position)
 	{
-		Vector2 terrainSize = terrainPreset.TerrainSize * terrainPreset.ChunkSize;
+		Vector2 terrainSize = TerrainPreset.TerrainSize * TerrainPreset.ChunkSize;
 		Vector2 procent = new((position.x + (terrainSize.x / 2)) / terrainSize.x, (position.z + (terrainSize.x / 2)) / terrainSize.x);
-		//procent.x = Mathf.InverseLerp(0, simplificationIncrement, procent.x);
-		//procent.y = Mathf.InverseLerp(0, simplificationIncrement, procent.y);
 		Vector2Int pos = new(Mathf.RoundToInt(procent.x * xNodesDimention), Mathf.RoundToInt(procent.y * yNodesDimention));
 
-		//Debug.Log($"procent: {procent}");
-		//Debug.Log($"nodesDimention x: {xNodesDimention}, y: {yNodesDimention}");
-
-		return gridNodes[pos.x, pos.y];
+		return GridNodes[pos.x, pos.y];
 	}
 	void BlurPenaltyMap(int blurSize)
 	{
@@ -86,7 +81,7 @@ public class Grid : MonoBehaviour
 			for (int x = -kernelExtents; x <= kernelExtents; x++)
 			{
 				int sampleX = Mathf.Clamp(x, 0, kernelExtents);
-				penaltiesHorizontalPass[0, y] += gridNodes[sampleX, y].MovementPenalty;
+				penaltiesHorizontalPass[0, y] += GridNodes[sampleX, y].MovementPenalty;
 			}
 
 			for (int x = 1; x < xNodesDimention; x++)
@@ -94,7 +89,7 @@ public class Grid : MonoBehaviour
 				int removeIndex = Mathf.Clamp(x - kernelExtents - 1, 0, xNodesDimention);
 				int addIndex = Mathf.Clamp(x + kernelExtents, 0, xNodesDimention - 1);
 
-				penaltiesHorizontalPass[x, y] = penaltiesHorizontalPass[x - 1, y] - gridNodes[removeIndex, y].MovementPenalty + gridNodes[addIndex, y].MovementPenalty;
+				penaltiesHorizontalPass[x, y] = penaltiesHorizontalPass[x - 1, y] - GridNodes[removeIndex, y].MovementPenalty + GridNodes[addIndex, y].MovementPenalty;
 			}
 		}
 
@@ -113,7 +108,7 @@ public class Grid : MonoBehaviour
 
                 penaltiesVerticalPass[x, y] = penaltiesVerticalPass[x, y - 1] - penaltiesHorizontalPass[x, removeIndex] + penaltiesHorizontalPass[x, addIndex];
 				int blurredPenalty = Mathf.RoundToInt((float)penaltiesVerticalPass[x, y] / (kernelSize * kernelSize));
-				gridNodes[x, y].MovementPenalty = blurredPenalty;
+				GridNodes[x, y].MovementPenalty = blurredPenalty;
 
 				if (penaltyMax < blurredPenalty)
 				{
@@ -143,21 +138,21 @@ public class Grid : MonoBehaviour
 				//Debug.Log($"dimentions: {pos}");
 				//Debug.Log($"node pos: {node.Pos}");
 				//Debug.Log($"node world pos: {node.WorldPos}");
-				nodes.Add(gridNodes[pos.x, pos.y]);
+				nodes.Add(GridNodes[pos.x, pos.y]);
 			}
 		}
 
 		return nodes;
 	}
-	private void OnDrawGizmos()
-	{
-		if (gridNodes != null)
-		{
-			foreach (Node node in gridNodes)
-			{
-				Gizmos.color = node.Walkable ? Color.white : Color.red;
-				Gizmos.DrawWireCube(node.WorldPos + new Vector3(0.5f, 0, 0.5f), new Vector3(0.9f, /*Mathf.Lerp(1, 5, Mathf.InverseLerp(penaltyMin, penaltyMax, node.MovementPenalty))*/node.MovementPenalty, 0.9f));
-			}
-		}
-	}
+	//private void OnDrawGizmos()
+	//{
+	//	//if (gridNodes != null)
+	//	//{
+	//	//	foreach (Node node in gridNodes)
+	//	//	{
+	//	//		Gizmos.color = node.Walkable ? Color.white : Color.red;
+	//	//		Gizmos.DrawWireCube(node.WorldPos + new Vector3(0.5f, 0, 0.5f), new Vector3(0.9f, /*Mathf.Lerp(1, 5, Mathf.InverseLerp(penaltyMin, penaltyMax, node.MovementPenalty))*/node.MovementPenalty, 0.9f));
+	//	//	}
+	//	//}
+	//}
 }

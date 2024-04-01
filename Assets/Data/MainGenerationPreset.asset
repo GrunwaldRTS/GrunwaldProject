@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MainGenerationPreset
   m_EditorClassIdentifier: 
   _terrainSize: {x: 5, y: 5}
-  _renderDistance: 2
+  _renderDistance: 1.5
   _chunkMaterial: {fileID: 2100000, guid: cb24e0db685bb774ab4bc72d8bc1d99e, type: 2}
   _levelOfDetail: 0
   _heightMultiplier: 21

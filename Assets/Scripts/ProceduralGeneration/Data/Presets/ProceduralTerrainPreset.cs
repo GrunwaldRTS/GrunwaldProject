@@ -7,7 +7,6 @@ public class ProceduralTerrainPreset : ScriptableObject
 {
 	[Header("Terrain")]
 	[SerializeField] Vector2Int _terrainSize = new Vector2Int(2, 2);
-	[SerializeField][Range(2, 10)] int _renderDistance;
 	[Header("Chunk")]
 	[SerializeField] Material _chunkMaterial;
 	[SerializeField][Range(0, 6)] int _levelOfDetail;
@@ -17,7 +16,6 @@ public class ProceduralTerrainPreset : ScriptableObject
 	[SerializeField] NoiseInspectorData _noiseInfo;
 
     public Vector2Int TerrainSize { get => _terrainSize; }
-	public int RenderDistance { get => _renderDistance; }
 	public Material ChunkMaterial { get => _chunkMaterial; }
 	public int LevelOfDetail { get => _levelOfDetail; }
 	public float HeightMultiplier { get => _heightMultiplier; }
