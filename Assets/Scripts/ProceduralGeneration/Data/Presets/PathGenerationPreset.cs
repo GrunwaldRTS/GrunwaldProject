@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "PathGenerationPreset", menuName = "ScriptableObjects/ProceduralGeneration/PathGenerationPreset")]
+[CreateAssetMenu(fileName = "PathGenerationPreset", menuName = "ScriptableObjects/ProceduralGeneration/VillageGeneration/PathGenerationPreset")]
 public class PathGenerationPreset : ScriptableObject
 {
     [SerializeField][Range(1, 3)] int _pathInterpolation = 2;

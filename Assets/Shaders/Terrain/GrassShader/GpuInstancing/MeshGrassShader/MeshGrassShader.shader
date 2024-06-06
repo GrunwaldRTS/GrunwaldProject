@@ -47,7 +47,7 @@ Shader "CustomShader/MeshGrassShader" {
 
             HLSLPROGRAM
 
-            #pragma target 4.5
+         
 
             #pragma shader_feature_local _DOUBLE_SIDED_NORMALS
 
