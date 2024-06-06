@@ -21,7 +21,7 @@ struct Interpolators {
 	float2 uv : TEXCOORD4;
 	float fogFactor : TEXCOORD6;
 	DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 7);
-	float2 worldUV : TEXCOORD8;
+	float2 worldUV : TEXCOORD9;
 };
 
 float4 _Albedo;

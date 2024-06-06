@@ -1,24 +1,45 @@
 ﻿#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-struct Attributes{
-	float4 positionOS : POSITION;
-	float3 normalOS : NORMAL;
+struct Attributes
+{
+    float4 positionOS : POSITION;
+    float3 normalOS : NORMAL;
 };
 
-struct Interpolators{
-	float4 positionCS : SV_POSITION;
+struct Interpolators
+{
+    float4 positionCS : SV_POSITION;
 };
 
-Interpolators Vertex(Attributes input){
-	Interpolators output;
+float3 _LightDirection;
 
-	VertexPositionInputs posnInputs = GetVertexPositionInputs(input.positionOS.zyx);
+float4 GetShadowCasterPositionCS(float3 positionWS, float3 normalWS)
+{
+    float3 lightDirectionWS = _LightDirection;
+    float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
+    
+#if UNITY_REVERSED_Z
+    positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
+#else
+    positionCS.z = max(positionCS.z, UNITY_NEAR_CLIP_VALUE);
+#endif
 
-	output.positionCS = posnInputs.positionCS;
-
-	return output;
+    return positionCS;
 }
 
-float3 Fragment(Interpolators input) : SV_TARGET{
-	return 0;
+Interpolators Vertex(Attributes input)
+{
+    Interpolators output;
+
+    VertexPositionInputs posnInputs = GetVertexPositionInputs(input.positionOS);
+    VectexNormalInputs normInputs = GetVertexNormalPositionInputs(input.normalOS);
+
+    output.positionCS = GetShadowCasterPositionCS(posnInputs.positionCS, normInputs.normalWS);
+
+    return output;
+}
+
+float3 Fragment(Interpolators input) : SV_TARGET
+{
+    return 0;
 }

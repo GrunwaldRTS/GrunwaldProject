@@ -66,7 +66,10 @@ public class PathfindingGrid
 		Vector2 procent = new((position.x + (terrainSize.x / 2)) / terrainSize.x, (position.z + (terrainSize.x / 2)) / terrainSize.x);
 		Vector2Int pos = new(Mathf.RoundToInt(procent.x * xNodesDimention), Mathf.RoundToInt(procent.y * yNodesDimention));
 
-		return GridNodes[pos.x, pos.y];
+		pos.x = pos.x >= xNodesDimention ? xNodesDimention - 1 : pos.x;
+        pos.y = pos.y >= xNodesDimention ? yNodesDimention - 1 : pos.y;
+
+        return GridNodes[pos.x, pos.y];
 	}
 	void BlurPenaltyMap(int blurSize)
 	{

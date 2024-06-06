@@ -18,9 +18,11 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	[SerializeField] GrassAnimationPreset grassAnimationPreset;
 	[SerializeField][Range(1, 10)] int grassRenderDistance = 7;
 	[Header("TrailsGeneration")]
-	[SerializeField] int simplification;
+	[SerializeField][Range(1, 5)] int simplification;
 	[SerializeField] int waterMargin;
 	[SerializeField] PathGenerationPreset pathGenerationPreset;
+	[Header("VillageGeneration")]
+	[SerializeField] VillageGenerationPreset villageGenerationPreset;
 
     ComputeShader grassPositionsShader;
 	ComputeShader animationMapShader;
@@ -166,7 +168,8 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
         SetTerrainShaderHeights();
         InstantiateTrees();
-		GenerateVillages(15, 15, 200, 35);
+		GenerateVillagesPositions(15, 15, 200);
+        //SpawnVillages(35);
 		//InstantiateBridges(bridgesCount);
 		grid = new PathfindingGrid(terrainPreset, simplification, waterMargin);
 		pathfinding = new PathFinding(grid);
@@ -174,7 +177,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		GeneratePathTextures();
 		CalculateGrassPositions();
 
-		//navSurface.BuildNavMesh();
+		navSurface.BuildNavMesh();
 		EventManager.OnChunkMeshesInstanced.Invoke();
 		areMeshesInstanced = true;
 	}
@@ -499,7 +502,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 			bridge.transform.rotation = rot;
 		}
 	}
-	void GenerateVillages(int amount, int radius, float villagesMinDistance, float clearForestRadius)
+	void GenerateVillagesPositions(int amount, int radius, float villagesMinDistance)
 	{
 		villagesPositions = new();
 		for(int i = 0; i < amount; i++)
@@ -518,16 +521,6 @@ public class ChunkMeshesInstancer : MonoBehaviour
 				{
 					villagesPositions.Add(pos2D);
 					Debug.DrawRay(ray.origin, Vector3.down * 1000f, Color.magenta, 1000);
-
-					trees
-					.Where(tree =>
-					{
-						Vector3 treePos = tree.transform.position;
-						float distance = Vector2.Distance(new Vector2(treePos.x, treePos.z), pos2D);
-						return distance <= clearForestRadius;
-					})
-					.ToList()
-					.ForEach(tree => tree.SetActive(false));
 				}
 				else
 				{
@@ -535,6 +528,23 @@ public class ChunkMeshesInstancer : MonoBehaviour
 				}
 			}
 		}
+	}
+	void SpawnVillages(float clearForestRadius)
+	{
+		foreach(Vector2 villagePos in villagesPositions)
+		{
+            trees
+            .Where(tree =>
+            {
+                Vector3 treePos = tree.transform.position;
+                float distance = Vector2.Distance(new Vector2(treePos.x, treePos.z), villagePos);
+                return distance <= clearForestRadius;
+            })
+            .ToList()
+            .ForEach(tree => tree.SetActive(false));
+
+			VillageGenerator.GenerateVillage(villageGenerationPreset, new Vector3(villagePos.x, 20, villagePos.y));
+        }
 	}
 	bool IsAreaLand(Matrix4x4 matrix, Vector2Int offset, Vector2Int size, out float avgHeight, TerrainCheckType checkType = TerrainCheckType.rectangular)
 	{

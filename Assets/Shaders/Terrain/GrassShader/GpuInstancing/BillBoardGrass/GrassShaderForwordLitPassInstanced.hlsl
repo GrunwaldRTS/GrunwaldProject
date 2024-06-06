@@ -44,7 +44,7 @@ Interpolators Vertex(Attributes input, uint instanceID : SV_InstanceID) {
 	return output;
 }
 
-float3 Fragment(Interpolators input, FRONT_FACE_TYPE frontFace : FRONT_FACE_SEMANTIC) : SV_TARGET {
+float4 Fragment(Interpolators input, FRONT_FACE_TYPE frontFace : FRONT_FACE_SEMANTIC) : SV_TARGET {
 	float4 colorSample = SAMPLE_TEXTURE2D(_Transparency, sampler_Transparency, input.uv);
 	TestAlphaClip(colorSample);
 
@@ -78,5 +78,5 @@ float3 Fragment(Interpolators input, FRONT_FACE_TYPE frontFace : FRONT_FACE_SEMA
 
 	float4 lightningOutput = UniversalFragmentPBR(lightingInput, surfaceInput);
 
-	return MixFog(lightningOutput, input.fogFactor);
+    return float4(MixFog(lightningOutput, input.fogFactor), 1);
 }

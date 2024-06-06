@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f49377b4b8972a4984988775857ca39, type: 3}
+  m_Name: MainVillageGenerationPreset
+  m_EditorClassIdentifier: 
+  _villageRadius: 40
+  _minRadiusBetweenStructures: 15
+  _structures:
+  - _type: 1
+    _prefab: {fileID: 6969010225860184796, guid: 6f8ed3907a45a5e479d860073c306a9b,
+      type: 3}
+    _minAmount: 8
+    _maxAmount: 10
+  - _type: 0
+    _prefab: {fileID: 1132146811545955471, guid: e03a726caacd8e54f8f87918bba06273,
+      type: 3}
+    _minAmount: 1
+    _maxAmount: 1
