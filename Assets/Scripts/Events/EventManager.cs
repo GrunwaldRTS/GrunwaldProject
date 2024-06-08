@@ -9,4 +9,6 @@ public static class EventManager
 	public static readonly Event OnChunkMeshesInstanced = new();
 	public static readonly Event OnPathPresetValidate = new();
 	public static readonly Event OnGeneratePathfindingGrid = new();
+
+	public static readonly Event OnSignedIn = new();
 }

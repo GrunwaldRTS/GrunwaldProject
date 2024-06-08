@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Singelton<T> : MonoBehaviour where T : Component
+public abstract class SingeltonPersistant<T> : MonoBehaviour where T : Component
 {
     private static T _instance;
     public static T Instance
@@ -20,11 +20,24 @@ public class Singelton<T> : MonoBehaviour where T : Component
         }
     }
 
-    private void OnDestroy()
+    public virtual void OnDestroy()
     {
         if (_instance == this)
         {
             _instance = null;
+        }
+    }
+
+    public virtual void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this as T;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(this);
         }
     }
 }
