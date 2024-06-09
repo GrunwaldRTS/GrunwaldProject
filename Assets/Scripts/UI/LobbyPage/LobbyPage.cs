@@ -10,88 +10,130 @@ public class LobbyPage : MonoBehaviour
     VisualElement rootEl;
     VisualElement body;
     VisualElement main;
-    VisualElement createLobbyModal;
+    VisualElement playersEl;
+    VisualElement dataEl;
     private void Awake()
     {
         AssignVisualElements();
 
-        LobbyManager manager = LobbyManager.Instance;
+        EventManager.OnJoinedLobby.AddListener(EnablePage);
+        EventManager.OnLeftLobby.AddListener(DisablePage);
 
-        EventManager.OnSignedIn.AddListener(LoadLobbies);
+        SubscribeToLobbyButtons();
+    }
+    private void Start()
+    {
+        DisablePage();
+    }
+    void EnablePage()
+    {
+        Debug.Log("Enable Lobby page");
+        StartCoroutine(RefreshLobby());
 
-        SubscribeToRefreshLobbies();
-        SubscribeToOpenCreateLobbyModal();
-        SubscribeToCreateLobbyModalButtons();
+        rootEl.style.display = DisplayStyle.Flex;
+    }
+    void DisablePage()
+    {
+        Debug.Log("Disable Lobby page");
+        StopAllCoroutines();
+
+        rootEl.style.display = DisplayStyle.None;
     }
     void AssignVisualElements()
     {
         rootEl = lobbyPage.rootVisualElement;
         body = rootEl.Q("body");
         main = body.Q("main");
-        createLobbyModal = body.Q("createLobbyModal");
+        playersEl = main.Q("players");
+        dataEl = main.Q("data");
     }
-    async void LoadLobbies()
-    { 
-        List<Lobby> lobbies = await LobbyManager.Instance.GetLobbies();
-
-        VisualElement lobbiesEl = rootEl.Q("lobbies");
-        
-        foreach(Lobby lobby in lobbies)
+    IEnumerator RefreshLobby()
+    {
+        while (true)
         {
-            VisualElement lobbieEl = new();
-            lobbieEl.AddToClassList("lobby");
-            lobbiesEl.Add(lobbieEl);
+            DeletePlayers();
 
-            Label lobbyLabelEl = new Label(lobby.Name);
-            lobbieEl.Add(lobbyLabelEl);
+            LoadLobbyData();
+
+            yield return new WaitForSeconds(1.1f);
         }
     }
-    void SubscribeToRefreshLobbies()
+    void DeletePlayers()
     {
-        Button refreshLobbiesButton = main.Q<Button>("refreshLobbies");
+        List<VisualElement> playerEls = playersEl.Query("player").ToList();
 
-        refreshLobbiesButton.clicked += () =>
+        foreach (VisualElement playerEl in playerEls)
         {
-            DeleteLobbiesEl();
-
-            LoadLobbies();
-        };
-    }
-    void DeleteLobbiesEl()
-    {
-        VisualElement lobbiesEl = rootEl.Q("lobbies");
-        List<VisualElement> lobbyEls = lobbiesEl.Query(className: "lobby").ToList();
-
-        foreach(VisualElement lobbyEl in lobbyEls)
-        {
-            lobbiesEl.Remove(lobbyEl);
+            playersEl.Remove(playerEl);
         }
     }
-    void SubscribeToOpenCreateLobbyModal()
+    void SubscribeToLobbyButtons()
     {
-        Button openCreateLobbyModalButton = main.Q<Button>("openCreateLobbyModalButton");
+        Button startGameButton = main.Q<Button>("startGameButton");
+        Button leaveLobbyButton = main.Q<Button>("leaveLobbyButton");
+        Button deleteLobbyButton = main.Q<Button>("deleteLobbyButton");
 
-        openCreateLobbyModalButton.clicked += () => 
+        startGameButton.clicked += () =>
         {
-            createLobbyModal.style.visibility = Visibility.Visible;
+            LobbyManager.Instance.StartGame();
+        };
+        leaveLobbyButton.clicked += () =>
+        {
+            LobbyManager.Instance.LeaveLobby();
+        };
+        deleteLobbyButton.clicked += () =>
+        {
+            LobbyManager.Instance.DeleteLobbyById(LobbyManager.Instance.JoinedLobby.Id);
         };
     }
-    void SubscribeToCreateLobbyModalButtons()
+    void LoadLobbyData()
     {
-        Button createLobbyButton = createLobbyModal.Q<Button>("createLobbyButton");
-        Button cancelCreateLobbyButton = createLobbyModal.Q<Button>("cancelCreateLobbyButton");
+        //Debug.Log("Update Lobby Data");
+        Lobby lobby = LobbyManager.Instance.JoinedLobby;
 
-        createLobbyButton.clicked += async () =>
-        {
-            string lobbyName = createLobbyModal.Q<TextField>("createLobbyName").value;
-            string lobbyPassword = createLobbyModal.Q<TextField>("createLobbyPassword").value;
-            int lobbyMaxPlayers = createLobbyModal.Q<SliderInt>("createLobbyMaxPlayers").value;
+        if (lobby is null) return;
 
-            await LobbyManager.Instance.CreateLobby(lobbyName, lobbyMaxPlayers, lobbyPassword != string.Empty, lobbyPassword);
-        };
-        cancelCreateLobbyButton.clicked += () =>
+        List<Player> players = lobby.Players;
+
+        if (players is null) return;
+
+        int playersCount = players.Count;
+        int maxPlayers = lobby.MaxPlayers;
+
+        Label lobbyName = main.Q<Label>("lobbyName");
+        lobbyName.text = $"Lobby: {lobby.Name}";
+
+        Label playerCountLabel = dataEl.Q<Label>("playersCount");
+
+        playerCountLabel.text = $"{playersCount}/{maxPlayers}";
+
+        foreach (Player player in players)
         {
-            createLobbyModal.style.visibility = Visibility.Hidden;
-        };
+            if (player is null) return;
+
+            VisualElement playerEl = new();
+            playerEl.AddToClassList("player");
+            playerEl.name = "player";
+            playersEl.Add(playerEl);
+
+            if (player.Data is null) return;
+            if (player.Data["playerName"].Value is null) return;
+
+            Label playerNameLabel = new(player.Data["playerName"].Value);
+            playerNameLabel.AddToClassList("playerName");
+            playerEl.Add(playerNameLabel);
+
+            if (!LobbyManager.Instance.IsLobbyHost()) continue;
+
+            Button kickPlayerButton = new();
+            kickPlayerButton.AddToClassList("btn");
+            kickPlayerButton.text = "Kick player";
+            playerEl.Add(kickPlayerButton);
+
+            kickPlayerButton.clicked += () =>
+            {
+                LobbyManager.Instance.KickPlayerById(player.Id);
+            };
+        }
     }
 }

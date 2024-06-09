@@ -11,4 +11,6 @@ public static class EventManager
 	public static readonly Event OnGeneratePathfindingGrid = new();
 
 	public static readonly Event OnSignedIn = new();
+	public static readonly Event OnJoinedLobby = new();
+    public static readonly Event OnLeftLobby = new();
 }

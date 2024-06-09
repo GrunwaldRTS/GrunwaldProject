@@ -2,17 +2,16 @@
     <Style src="project://database/Assets/UI/LobbyScreen/LobbyStyles.uss?fileID=7433441132597879392&amp;guid=300e0406674e16e4eb8562ad157d00ed&amp;type=3#LobbyStyles" />
     <ui:VisualElement name="body">
         <ui:VisualElement name="main">
-            <ui:Label text="Lobbies" display-tooltip-when-elided="true" class="title" />
-            <ui:Button text="Refresh" class="btn" name="refreshLobbies" />
-            <ui:VisualElement name="lobbies" />
-            <ui:Button text="Create lobby" name="openCreateLobbyModalButton" class="btn" />
-        </ui:VisualElement>
-        <ui:VisualElement name="createLobbyModal">
-            <ui:TextField picking-mode="Ignore" value="" text="Name" name="createLobbyName" />
-            <ui:TextField picking-mode="Ignore" text="Password" name="createLobbyPassword" />
-            <ui:SliderInt picking-mode="Ignore" label="Max Players" value="4" high-value="4" name="createLobbyMaxPlayers" />
-            <ui:Button text="Create Lobby" name="createLobbyButton" class="btn" />
-            <ui:Button text="Cancel" name="cancelCreateLobbyButton" class="btn" />
+            <ui:Label display-tooltip-when-elided="true" class="title" text="Lobby Name" name="lobbyName" />
+            <ui:VisualElement class="data" name="data">
+                <ui:Label display-tooltip-when-elided="true" class="h1" text="Players" />
+                <ui:Label display-tooltip-when-elided="true" class="h1" name="playersCount" text="1/4" />
+            </ui:VisualElement>
+            <ui:VisualElement name="players">
+            </ui:VisualElement>
+            <ui:Button text="Start Game" class="btn" name="startGameButton" />
+            <ui:Button text="Leave Lobby" class="btn" name="leaveLobbyButton" />
+            <ui:Button text="Delete Lobby" class="btn" name="deleteLobbyButton" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
