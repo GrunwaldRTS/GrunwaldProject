@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Security;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
@@ -7,69 +8,147 @@ using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
-public class LobbyManager : MonoBehaviour
+public class LobbyManager : SingeltonPersistant<LobbyManager>
 {
-    Lobby hostLobby;
+    public string PlayerName { get; private set; }
+    public Lobby JoinedLobby { get; private set; }
 
-    private async void Start()
+    public override void Awake()
     {
-        await UnityServices.InitializeAsync();
+        base.Awake();
 
-        AuthenticationService.Instance.SignedIn += () =>
-        {
-            Debug.Log($"Signed in {AuthenticationService.Instance.PlayerId}");
-        };
+        PlayerName = $"Player{Random.Range(0, 100)}";
 
-        await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        Authenticate(PlayerName);
     }
 
+    Player GetPlayer()
+    {
+        return new Player
+        {
+            Data = new Dictionary<string, PlayerDataObject>
+            {
+                { "PlayerName", new(PlayerDataObject.VisibilityOptions.Member, PlayerName) }
+            }
+        };
+    }
+
+    public async void Authenticate(string playerName)
+    {
+        try
+        {
+            this.PlayerName = playerName;
+
+            InitializationOptions options = new();
+            options.SetProfile(playerName);
+
+            await UnityServices.InitializeAsync();
+
+            AuthenticationService.Instance.SignedIn += () => 
+            {
+                Debug.Log($"Signed in! {AuthenticationService.Instance.PlayerId} {AuthenticationService.Instance.PlayerName}");
+
+                EventManager.OnSignedIn.Invoke();
+            };
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        }
+        catch(LobbyServiceException e)
+        {
+            Debug.Log(e.Message);
+        }
+    }
+
+    public async Task<Lobby> CreateLobby(string lobbyName, int maxPlayers, bool isPrivate = false, string lobbyPassword = "")
+    {
+        try
+        {
+            Debug.Log(lobbyName);
+            Debug.Log(lobbyPassword);
+
+            CreateLobbyOptions options = options = new();
+
+            if (isPrivate)
+            {
+                options.IsPrivate = isPrivate;
+                options.Password = lobbyPassword;
+            }
+
+            if (lobbyName == string.Empty)
+            {
+                lobbyName = $"Lobby{Random.Range(0, 10000)}";
+            }
+
+            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
+
+            JoinedLobby = lobby;
+
+            StartCoroutine(HandleLobbyHartBeat());
+
+            Debug.Log($"Created Lobby! {lobby.Name} {lobby.MaxPlayers} {lobby.IsPrivate}");
+
+            return lobby;
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.Log(e.Message);
+        }
+
+        return null;
+    }
     IEnumerator HandleLobbyHartBeat()
     {
         while (true)
         {
             Task task = new Task(async () =>
             {
-                await LobbyService.Instance.SendHeartbeatPingAsync(hostLobby.Id);
+                await LobbyService.Instance.SendHeartbeatPingAsync(JoinedLobby.Id);
+                Debug.Log("sended");
             });
 
-            yield return new WaitUntil(() => task.IsCompleted );
+            task.Start();
+
+            yield return new WaitUntil(() => task.IsCompleted);
+
+            Debug.Log("hearth beat");
 
             yield return new WaitForSeconds(15);
         }
     }
 
-    async void CreateLobby()
-    {
-        string lobbyName = "MyLobby";
-        int maxPlayers = 4;
-
-        try
-        {
-            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers);
-
-            hostLobby = lobby;
-
-            StartCoroutine(HandleLobbyHartBeat());
-
-            Debug.Log($"Created Lobby! {lobby.Name} {lobby.MaxPlayers}");
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.Log(e.Message);
-        }
-    }
-
-    async void ListLobbies()
+    public async Task<List<Lobby>> GetLobbies()
     {
         try
         {
-            QueryResponse response = await Lobbies.Instance.QueryLobbiesAsync();
-            
-            Debug.Log($"Lobbies founc: {response.Results.Count}");
-            foreach(Lobby lobby in response.Results)
+            QueryLobbiesOptions options = new QueryLobbiesOptions
             {
-                Debug.Log($"{lobby.Name} {lobby.MaxPlayers}");
-            }
+                Count = 25,
+                Filters = new List<QueryFilter>
+                {
+                    new(QueryFilter.FieldOptions.AvailableSlots, "0", QueryFilter.OpOptions.GT)
+                },
+                Order = new List<QueryOrder>
+                {
+                    new QueryOrder(false, QueryOrder.FieldOptions.Created)
+                }
+            };
+
+            QueryResponse response = await Lobbies.Instance.QueryLobbiesAsync(options);
+
+            return response.Results;
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.Log(e.Message);
+        }
+
+        return null;
+    }
+
+    public async void JoinLobbyByCode(string lobbyCode)
+    {
+        try
+        {
+            await Lobbies.Instance.JoinLobbyByCodeAsync(lobbyCode);
         }
         catch (LobbyServiceException e)
         {
@@ -77,8 +156,8 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    async void JoinLobby()
+    public override void OnDestroy()
     {
-        await Lobbies.Instance.JoinLobbyByIdAsync(hostLobby.Id);
+        base.OnDestroy();
     }
 }
