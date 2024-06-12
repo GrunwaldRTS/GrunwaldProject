@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -8,13 +9,9 @@ using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
 
-public class RelayManager : SingeltonPersistant<RelayManager>
+public class RelayManager : Singelton<RelayManager>
 {
     public string JoinCode { get; private set; }
-    public override void Awake()
-    {
-        base.Awake();
-    }
     public async Task<string> CreateRelay(int maxPlayers)
     {
         try
@@ -25,16 +22,16 @@ public class RelayManager : SingeltonPersistant<RelayManager>
 
             Debug.Log($"Created Relay with joincode: {JoinCode}");
 
-            RelayServerData relayData = new(allocation, "dlts");
+            RelayServerData relayData = new(allocation, "dtls");
 
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(relayData);
-            NetworkManager.Singleton.StartHost();
+            NetworkManager.Singleton.StartHost();  
 
             return JoinCode;
         }
         catch (RelayServiceException e)
         {
-            Debug.Log(e.Message);
+            Debug.LogException(e);
             return null;
         }
     }
@@ -52,11 +49,7 @@ public class RelayManager : SingeltonPersistant<RelayManager>
         }
         catch (RelayServiceException e)
         {
-            Debug.Log(e.Message);
+            Debug.LogException(e);
         }
-    }
-    public override void OnDestroy()
-    {
-        base.OnDestroy();
     }
 }

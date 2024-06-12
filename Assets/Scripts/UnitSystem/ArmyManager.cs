@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class ArmyManager : NetworkBehaviour
 {
+	[SerializeField] Vector3 startPos;
 	[SerializeField] GameObject warbandPrefab;
 	[SerializeField] GameObject rectangleArmyFormationPrefab;
 	GameObject Formation;
@@ -20,13 +21,16 @@ public class ArmyManager : NetworkBehaviour
     {
         ArmyId = (int)OwnerClientId;
 
-		StartSpawnWarband();
+		transform.position = startPos;
+
+        StartSpawnWarband();
     }
 	void StartSpawnWarband()
 	{
 		if (!IsServer) return;
 
 		GameObject go = Instantiate(warbandPrefab);
+		go.transform.position = transform.position;
 		NetworkObject obj = go.GetComponent<NetworkObject>();
 		obj.SpawnWithOwnership(OwnerClientId, true);
 		Debug.Log(obj.TrySetParent(gameObject, true));

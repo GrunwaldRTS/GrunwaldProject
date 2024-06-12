@@ -16,28 +16,23 @@ public class LobbyPage : MonoBehaviour
     {
         AssignVisualElements();
 
-        EventManager.OnJoinedLobby.AddListener(EnablePage);
-        EventManager.OnLeftLobby.AddListener(DisablePage);
-
         SubscribeToLobbyButtons();
     }
     private void Start()
     {
         DisablePage();
     }
-    void EnablePage()
+    public void EnablePage()
     {
-        Debug.Log("Enable Lobby page");
-        StartCoroutine(RefreshLobby());
-
         rootEl.style.display = DisplayStyle.Flex;
+        StartCoroutine(RefreshLobby());
+        Debug.Log("Enable Lobby page");
     }
-    void DisablePage()
+    public void DisablePage()
     {
-        Debug.Log("Disable Lobby page");
         StopAllCoroutines();
-
         rootEl.style.display = DisplayStyle.None;
+        Debug.Log("Disable Lobby page");
     }
     void AssignVisualElements()
     {
@@ -75,7 +70,8 @@ public class LobbyPage : MonoBehaviour
 
         startGameButton.clicked += () =>
         {
-            LobbyManager.Instance.StartGame();
+            Debug.Log("Start game");
+            StartCoroutine(LobbyManager.Instance.StartGame());
         };
         leaveLobbyButton.clicked += () =>
         {

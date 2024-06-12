@@ -19,9 +19,6 @@ public class LobbiesPage : MonoBehaviour
 
         LobbyManager manager = LobbyManager.Instance;
 
-        EventManager.OnJoinedLobby.AddListener(DisablePage);
-        EventManager.OnLeftLobby.AddListener(EnablePage);
-
         EventManager.OnSignedIn.AddListener(LoadLobbies);
 
         SubscribeToOpenButtons();
@@ -32,19 +29,17 @@ public class LobbiesPage : MonoBehaviour
     {
         EnablePage();
     }
-    void EnablePage()
+    public void EnablePage()
     {
-        Debug.Log("Enable Lobbies page");
-        StartCoroutine(RefreshLobbies());
-
         rootEl.style.display = DisplayStyle.Flex;
+        StartCoroutine(RefreshLobbies());
+        Debug.Log("Enable Lobbies page");
     }
-    void DisablePage()
+    public void DisablePage()
     {
-        Debug.Log("Disable Lobbies page");
         StopAllCoroutines();
-
         rootEl.style.display = DisplayStyle.None;
+        Debug.Log("Disable Lobbies page");
     }
     void AssignVisualElements()
     {

@@ -1,14 +1,21 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
+using Unity.Services.Relay;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using Random = UnityEngine.Random;
 
-public class LobbyManager : SingeltonPersistant<LobbyManager>
+public class LobbyManager : Singelton<LobbyManager>
 {
     public string PlayerId { get; private set; }
     public string PlayerName { get; private set; }
@@ -17,10 +24,8 @@ public class LobbyManager : SingeltonPersistant<LobbyManager>
 
     const string KEY_START_GAME = "StartGame_RelayCode";
 
-    public override void Awake()
+    private void Awake()
     {
-        base.Awake();
-
         PlayerName = $"Player{Random.Range(0, 100)}";
 
         Authenticate(PlayerName);
@@ -29,10 +34,6 @@ public class LobbyManager : SingeltonPersistant<LobbyManager>
     private void Start()
     {
         StartCoroutine(HandleLobbiesPolling());
-    }
-    public override void OnDestroy()
-    {
-        base.OnDestroy();
     }
     public async void Authenticate(string playerName)
     {
@@ -43,7 +44,7 @@ public class LobbyManager : SingeltonPersistant<LobbyManager>
             InitializationOptions options = new();
             options.SetProfile(playerName);
 
-            await UnityServices.InitializeAsync();
+            await UnityServices.InitializeAsync(options);
 
             AuthenticationService.Instance.SignedIn += () => 
             {
@@ -103,10 +104,6 @@ public class LobbyManager : SingeltonPersistant<LobbyManager>
             return null;
         }
     }
-    void StopCoroutines()
-    {
-        StopAllCoroutines();
-    }
     IEnumerator HandleLobbyHartBeat()
     {
         while (true)
@@ -124,49 +121,74 @@ public class LobbyManager : SingeltonPersistant<LobbyManager>
             yield return new WaitForSeconds(15);
         }
     }
+    bool deletedLobby;
     IEnumerator HandleLobbiesPolling()
     {
         while (true)
         {
-            Task task = new Task(async () =>
+            Task task = new (async () =>
             {
                 try
                 {
                     PublicLobbies = await GetLobbies();
 
                     if (JoinedLobby is null) return;
-                    
+
                     JoinedLobby = await LobbyService.Instance.GetLobbyAsync(JoinedLobby.Id);
-
-                    if (!JoinedLobby.Players.Select(player => player.Id).Contains(PlayerId))
-                    {
-                        Debug.Log("No longer in lobby");
-                        StopCoroutines();
-                        JoinedLobby = null;
-                        EventManager.OnLeftLobby.Invoke();
-                        return;
-                    }
-
-                    if (JoinedLobby.Data[KEY_START_GAME].Value != "0")
-                    {
-                        if (IsLobbyHost())
-                        {
-                            RelayManager.Instance.JoinRelay(JoinedLobby.Data[KEY_START_GAME].Value);
-                        }
-
-                        StopCoroutines();
-                    }
                 }
                 catch (LobbyServiceException e)
                 {
-                    Debug.Log(e.Message);
+                    if (e.ApiError.Code == 16001)
+                    {
+                        Debug.Log("Lobby deleted");
+                        deletedLobby = true;
+                        return;
+                    }
+
+                    Debug.LogError(e);
                 }
             });
 
             task.Start();
 
             yield return new WaitUntil(() => task.IsCompleted);
-            yield return new WaitForSeconds(1.1f);
+
+            if (deletedLobby)
+            {
+                deletedLobby = false;
+                EventManager.OnLeftLobby.Invoke();
+                JoinedLobby = null;
+            }
+
+            if (JoinedLobby is not null)
+            {
+                if (!JoinedLobby.Players.Select(player => player.Id).Contains(PlayerId))
+                {
+                    Debug.Log("No longer in lobby");
+                    EventManager.OnLeftLobby.Invoke();
+                    JoinedLobby = null;
+                }
+
+                if (JoinedLobby is not null)
+                {
+                    if (JoinedLobby.Data is not null)
+                    {
+                        if (JoinedLobby.Data[KEY_START_GAME].Value != "0")
+                        {
+                            if (!IsLobbyHost())
+                            {
+                                Debug.Log("Started Game");
+                                SceneManager.LoadScene("TestProceduralGenerationScene");
+                                RelayManager.Instance.JoinRelay(JoinedLobby.Data[KEY_START_GAME].Value);
+                            }
+
+                            StopAllCoroutines();
+                        }
+                    }
+                }
+           }
+
+            yield return new WaitForSeconds(1.5f);
         }
     }
     private async Task<List<Lobby>> GetLobbies()
@@ -257,7 +279,6 @@ public class LobbyManager : SingeltonPersistant<LobbyManager>
 
             Debug.Log($"Left lobby with id: {JoinedLobby.Id}");
 
-            StopCoroutines();
             JoinedLobby = null;
 
             EventManager.OnLeftLobby.Invoke();
@@ -293,7 +314,6 @@ public class LobbyManager : SingeltonPersistant<LobbyManager>
 
             Debug.Log($"Deleted lobby with id: {lobbyId}");
 
-            StopCoroutines();
             JoinedLobby = null;
 
             EventManager.OnLeftLobby.Invoke();
@@ -313,28 +333,37 @@ public class LobbyManager : SingeltonPersistant<LobbyManager>
 
         return lobbyToDelete.HostId == AuthenticationService.Instance.PlayerId;
     }
-    public async void StartGame()
+    public IEnumerator StartGame()
     {
-        try
+        if (JoinedLobby is null) yield break;
+        if (!IsLobbyHost()) yield break;
+
+        AsyncOperation loadSceneTask = SceneManager.LoadSceneAsync("TestProceduralGenerationScene", LoadSceneMode.Additive);
+        while (!loadSceneTask.isDone)
         {
-            if (JoinedLobby is null) return;
-            if (!IsLobbyHost()) return;
+            yield return null;
+        }
 
-            string relayCode = await RelayManager.Instance.CreateRelay(JoinedLobby.MaxPlayers);
+        SceneManager.SetActiveScene(SceneManager.GetSceneByName("TestProceduralGenerationScene"));
 
-            UpdateLobbyOptions options = new UpdateLobbyOptions
-            {
-                Data = new Dictionary<string, DataObject>
+        yield return null;
+
+        StartRelay();
+    }
+    async void StartRelay()
+    {
+        string relayCode = await RelayManager.Instance.CreateRelay(JoinedLobby.MaxPlayers - 1);
+
+        UpdateLobbyOptions options = new UpdateLobbyOptions
+        {
+            Data = new Dictionary<string, DataObject>
                 {
                     { KEY_START_GAME, new(DataObject.VisibilityOptions.Member, relayCode) }
                 }
-            };
+        };
 
-            JoinedLobby = await LobbyService.Instance.UpdateLobbyAsync(JoinedLobby.Id, options);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.Log(e.Message);
-        }
+        JoinedLobby = await LobbyService.Instance.UpdateLobbyAsync(JoinedLobby.Id, options);
+
+        Debug.Log($"Started Game with relay code: {relayCode}");
     }
 }

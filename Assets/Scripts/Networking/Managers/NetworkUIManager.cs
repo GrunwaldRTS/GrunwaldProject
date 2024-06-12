@@ -7,24 +7,24 @@ public class NetworkUIManager : MonoBehaviour
 {
     [SerializeField][Range(0, 1)] float width = 0.2f;
     [SerializeField][Range(0, 1)] float height = 0.2f;
-    //private void OnGUI()
-    //{
-    //    float w = Screen.width * width;
-    //    float h = Screen.height * height;
-    //    GUILayout.BeginArea(new Rect(10, 10, w, h));
+    private void OnGUI()
+    {
+        float w = Screen.width * width;
+        float h = Screen.height * height;
+        GUILayout.BeginArea(new Rect(10, 10, w, h));
 
-    //    NetworkManager netManager = NetworkManager.Singleton;
-    //    if (!netManager.IsClient && !netManager.IsServer)
-    //    {
-    //        StartButtons();
-    //    }
-    //    else
-    //    {
-    //        StatusLabel();
-    //        SubmitNewPosition();
-    //    }
-    //    GUILayout.EndArea();
-    //}
+        NetworkManager netManager = NetworkManager.Singleton;
+        if (!netManager.IsClient && !netManager.IsServer)
+        {
+            StartButtons();
+        }
+        else
+        {
+            StatusLabel();
+            SubmitNewPosition();
+        }
+        GUILayout.EndArea();
+    }
     void StartButtons()
     {
         if (GUILayout.Button("Server"))
