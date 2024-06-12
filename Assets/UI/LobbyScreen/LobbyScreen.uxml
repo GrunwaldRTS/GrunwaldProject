@@ -8,7 +8,7 @@
                 <ui:Label display-tooltip-when-elided="true" class="h1" name="playersCount" text="1/4" />
             </ui:VisualElement>
             <ui:VisualElement name="players">
-            </ui:VisualElement>
+        </ui:VisualElement>
             <ui:Button text="Start Game" class="btn" name="startGameButton" />
             <ui:Button text="Leave Lobby" class="btn" name="leaveLobbyButton" />
             <ui:Button text="Delete Lobby" class="btn" name="deleteLobbyButton" />

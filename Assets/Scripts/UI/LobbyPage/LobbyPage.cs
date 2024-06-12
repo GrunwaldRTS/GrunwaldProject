@@ -43,7 +43,7 @@ public class LobbyPage : MonoBehaviour
         dataEl = main.Q("data");
     }
     IEnumerator RefreshLobby()
-    {
+    { 
         while (true)
         {
             DeletePlayers();
@@ -60,7 +60,7 @@ public class LobbyPage : MonoBehaviour
         foreach (VisualElement playerEl in playerEls)
         {
             playersEl.Remove(playerEl);
-        }
+    }
     }
     void SubscribeToLobbyButtons()
     {
@@ -74,7 +74,7 @@ public class LobbyPage : MonoBehaviour
             StartCoroutine(LobbyManager.Instance.StartGame());
         };
         leaveLobbyButton.clicked += () =>
-        {
+    {
             LobbyManager.Instance.LeaveLobby();
         };
         deleteLobbyButton.clicked += () =>
@@ -127,9 +127,9 @@ public class LobbyPage : MonoBehaviour
             playerEl.Add(kickPlayerButton);
 
             kickPlayerButton.clicked += () =>
-            {
+        {
                 LobbyManager.Instance.KickPlayerById(player.Id);
-            };
-        }
+        };
     }
+}
 }
