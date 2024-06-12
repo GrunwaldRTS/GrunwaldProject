@@ -1,0 +1,23 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/LobbyScreen/LobbiesStyles.uss?fileID=7433441132597879392&amp;guid=def3bad7dcd771a4285508a7801bebd7&amp;type=3#LobbiesStyles" />
+    <ui:VisualElement name="body">
+        <ui:VisualElement name="main">
+            <ui:Label text="Lobbies" display-tooltip-when-elided="true" class="title" />
+            <ui:VisualElement name="lobbies" />
+            <ui:Button class="btn" text="Create lobby" name="openCreateLobbyModalButton" />
+            <ui:Button class="btn" text="Direct join" name ="openDirectJoinModalButton" />
+        </ui:VisualElement>
+        <ui:VisualElement class="modal" name="directJoinLobbyModal">
+            <ui:TextField text="Lobby Code" name="directJoinLobbyCode" />
+            <ui:Button class="btn" text="Join Lobby" name="directJoinLobbyButton" />
+            <ui:Button class="btn" text="Cancel" name="cancelDirectJoinLobbyButton" />
+        </ui:VisualElement>
+        <ui:VisualElement class="modal" name="createLobbyModal">
+            <ui:TextField picking-mode="Ignore" text="Name" name="createLobbyName" />
+            <ui:TextField picking-mode="Ignore" text="Password" name="createLobbyPassword" />
+            <ui:SliderInt picking-mode="Ignore" label="Max Players" value="4" high-value="4" name="createLobbyMaxPlayers" />
+            <ui:Button text="Create Lobby" name="createLobbyButton" class="btn" />
+            <ui:Button text="Cancel" name="cancelCreateLobbyButton" class="btn" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

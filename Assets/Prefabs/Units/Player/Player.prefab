@@ -83,6 +83,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ff75c1b7a4a45748a2fe2722acff965, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  startPos: {x: 0, y: 10, z: 0}
   warbandPrefab: {fileID: 3436181356207983711, guid: fb4dc1437ac19064fa3c5fbb66194836,
     type: 3}
   rectangleArmyFormationPrefab: {fileID: 6276378588830162346, guid: 5a8dd019f7b95f54b9d2fb6ad07e8358,

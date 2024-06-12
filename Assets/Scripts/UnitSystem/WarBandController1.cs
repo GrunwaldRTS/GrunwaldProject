@@ -114,7 +114,7 @@ public class WarBandController1 : NetworkBehaviour
 			go.transform.position = nestPositions[i] + transform.position;
 			NetworkObject networkObject = go.GetComponent<NetworkObject>();
 			networkObject.SpawnWithOwnership(OwnerClientId, true);
-			Debug.Log(networkObject.TrySetParent(gameObject, true));
+			networkObject.TrySetParent(gameObject, true);
 
 			warriors.Add(go);
 		}
@@ -176,7 +176,14 @@ public class WarBandController1 : NetworkBehaviour
     private void Start()
     {
         mainCamera = Camera.main;
-        Debug.Log($"mainCamera: {mainCamera}");
+		
+		foreach(Camera camera in Camera.allCameras)
+		{
+			if (camera != mainCamera)
+			{
+				camera.gameObject.SetActive(false);
+			}
+		}
     }
     private void Update()
 	{

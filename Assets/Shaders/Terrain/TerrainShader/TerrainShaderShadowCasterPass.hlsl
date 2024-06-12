@@ -32,7 +32,7 @@ Interpolators Vertex(Attributes input)
     Interpolators output;
 
     VertexPositionInputs posnInputs = GetVertexPositionInputs(input.positionOS);
-    VectexNormalInputs normInputs = GetVertexNormalPositionInputs(input.normalOS);
+    VertexNormalInputs normInputs = GetVertexNormalInputs(input.normalOS);
 
     output.positionCS = GetShadowCasterPositionCS(posnInputs.positionCS, normInputs.normalWS);
 

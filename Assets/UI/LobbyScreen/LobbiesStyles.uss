@@ -16,40 +16,20 @@
 	font-size: 30px;
 }
 
-.h1{
-	color: white;
-	font-size: 20px;
+#lobbies
+{
+	display: flex;
+	flex-direction: column;
 }
 
-#data{
-	width: 100%;
-	flex-direction: row;
-	align-items: center;
-	justify-content: space-between;
-}
-
-#players{
-	flex-direction: row; 
-	flex-wrap: wrap;
-}
-
-.player{
+.lobby{
 	background-color: #1D1D1D;
 	color: white;
-	border-radius: 5px;
-	width: 100%;
 	padding: 10px;
-	flex-direction: row;
-	align-items: center;
-	justify-content: space-between;
+	border-radius: 5px;
 }
 
-.player Label{
-	font-size: 20px;
-	-unity-font-style: bold;
-}
-
-/* #createLobbyModal{
+.modal{
 	display: none;
 
 	background-color: #1D1D1D;
@@ -62,7 +42,11 @@
 	position: absolute;
 	top: 20%;
 	left: 37.5%;
-} */
+}
+
+#createLobbyModal{
+	
+}
 
 TextField{
 	color: black;

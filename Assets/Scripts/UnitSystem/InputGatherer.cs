@@ -8,7 +8,6 @@ public class InputGatherer : NetworkBehaviour
 {
 	public List<GameObject> selectedWarbands = new List<GameObject>();
 	private Camera mainCam;
-	[SerializeField] GameObject armyPrefab;
 	[SerializeField] GameObject boxVisualPrefab;
 	private RectTransform boxVisual;
 	[SerializeField] private GameObject ArrowHeadModel;
