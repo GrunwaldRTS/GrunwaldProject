@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 809537f2a663270439e573b5a023ab74, type: 3}
+  m_Name: PathfindingGridPreset
+  m_EditorClassIdentifier: 
+  _terrainPreset: {fileID: 11400000, guid: 8ac5125677cf47d48834fa6714c3f9f7, type: 2}
+  _simplification: 1
+  _waterMargin: 0

@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.AI.Navigation;
 using System.Linq;
+using AStarPathfinding;
+using System.Collections;
 
 public class ChunkMeshesInstancer : MonoBehaviour
 {
@@ -12,17 +14,13 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	[SerializeField] GameObject bridgePrefab;
 	[SerializeField][Range(1, 6)] int bridgesCount = 3;
 	[Header("Grass")]
-	[SerializeField] float grassHeightThreshold = 12f;
-	[SerializeField][Range(1, 8)] int grassChunkSizeModifier = 8;
-	[SerializeField][Range(1, 8)] int density = 3;
-	[SerializeField] GrassAnimationPreset grassAnimationPreset;
-	[SerializeField][Range(1, 10)] int grassRenderDistance = 7;
-	[Header("TrailsGeneration")]
-	[SerializeField][Range(1, 5)] int simplification;
-	[SerializeField] int waterMargin;
-	[SerializeField] PathGenerationPreset pathGenerationPreset;
+	[SerializeField] GrassPreset grassPreset;
+    [Header("TrailsGeneration")]
+    [SerializeField] PathGenerationPreset pathGenerationPreset;
 	[Header("VillageGeneration")]
 	[SerializeField] VillageGenerationPreset villageGenerationPreset;
+
+	bool isRenderingEnabled;
 
     ComputeShader grassPositionsShader;
 	ComputeShader animationMapShader;
@@ -70,7 +68,6 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	List<Vector3> pathPositions = new();
 
 	PathFinding pathfinding;
-    PathfindingGrid grid;
 
 	enum TerrainCheckType
 	{
@@ -93,21 +90,22 @@ public class ChunkMeshesInstancer : MonoBehaviour
         InitializeComputeShaders();
 		InitializeComputeBuffers();
 
-        EventManager.OnChunksGenerationCompleated.AddListener(EnableRendering);
-		EventManager.OnPathPresetValidate.AddListener(GeneratePathTextures);
+        EventManager.OnChunksGenerationCompleated.AddListener(AssignDependencies);
+        EventManager.OnGeneratedPathfindingGrid.AddListener(() => { isRenderingEnabled = true; });
+        EventManager.OnPathPresetValidate.AddListener(GeneratePathTextures);
 	}
 	void CalculateGrassData()
 	{
-        grassChunkSize = terrainPreset.ChunkSize / (float)grassChunkSizeModifier;
+        grassChunkSize = terrainPreset.ChunkSize / (float)grassPreset.GrassChunkSizeModifier;
         grassChunkSizeRounded = Mathf.RoundToInt(grassChunkSize);
         grassChunksPerTerrainChunkDimention = Mathf.RoundToInt(terrainPreset.ChunkSize / (float)grassChunkSizeRounded);
-        grassChunkDimensionGrassCount = grassChunkSizeRounded * density;
+        grassChunkDimensionGrassCount = grassChunkSizeRounded * grassPreset.Density;
         grassChunkGrassCount = (int)Mathf.Pow(grassChunkDimensionGrassCount, 2);
     }
 	void InitializeComputeShaders()
 	{
 		grassPositionsShader.SetFloat("_HeightMultiplier", terrainPreset.HeightMultiplier);
-		grassPositionsShader.SetInt("_Density", density);
+		grassPositionsShader.SetInt("_Density", grassPreset.Density);
 		grassPositionsShader.SetFloat("_XTerrainDimention", terrainSize.x);
 		grassPositionsShader.SetFloat("_YTerrainDimention", terrainSize.y);
 		grassPositionsShader.SetInt("_TerrainChunkSize", terrainPreset.ChunkSize);
@@ -119,7 +117,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
         cullGrassUnderWaterShader.SetInt("_PathTextureResolution", pathTextureResolution);
         cullGrassUnderWaterShader.SetInt("_GrassChunkResolution", grassChunkDimensionGrassCount);
         cullGrassUnderWaterShader.SetFloat("_GrassChunkSize", grassChunkSize);
-        cullGrassUnderWaterShader.SetFloat("_WaterTreshold", grassHeightThreshold);
+        cullGrassUnderWaterShader.SetFloat("_WaterTreshold", grassPreset.GrassHeightThreshold);
 
         animationTexture = new(animationTextureResolution, animationTextureResolution, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
         animationTexture.enableRandomWrite = true;
@@ -127,9 +125,9 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
         animationMapShader.SetTexture(0, "_AnimationMap", animationTexture);
 		animationMapShader.SetInt("_Resolution", animationTextureResolution);
-        animationMapShader.SetFloat("_Amplitude", grassAnimationPreset.WindAmplitude);
-        animationMapShader.SetFloat("_Frequency", grassAnimationPreset.WindFrequency);
-        animationMapShader.SetFloat("_AddValue", grassAnimationPreset.AddValue);
+        animationMapShader.SetFloat("_Amplitude", grassPreset.GrassAnimationPreset.WindAmplitude);
+        animationMapShader.SetFloat("_Frequency", grassPreset.GrassAnimationPreset.WindFrequency);
+        animationMapShader.SetFloat("_AddValue", grassPreset.GrassAnimationPreset.AddValue);
 
 		pathTextureShader.SetInt("_Resolution", pathTextureResolution);
 		pathTextureShader.SetInt("_ChunkSize", terrainPreset.ChunkSize);
@@ -157,30 +155,37 @@ public class ChunkMeshesInstancer : MonoBehaviour
         groupSumBuffer = new(groupSumScanThreadBlocksCount, sizeof(uint));
         offsetBuffer = new(1024, sizeof(uint));
     }
-	void EnableRendering(ChunkDataProvider chunkDataProvider, Dictionary<Vector2Int, Chunk> chunks, Vector2Int[] riversPoints, Dictionary<Vector2Int, float> globalHeightMap)
+	void AssignDependencies(ChunkDataProvider chunkDataProvider, Dictionary<Vector2Int, Chunk> chunks, Vector2Int[] riversPoints, Dictionary<Vector2Int, float> globalHeightMap)
 	{
+		Debug.Log("Assign Dependencies");
+
 		this.chunkDataProvider = chunkDataProvider;
 		this.chunks = chunks;
 		this.riversPoints = riversPoints;
 		this.globalHeightMap = globalHeightMap;
 
-        EventManager.OnGeneratePathfindingGrid.Invoke();
+		StartCoroutine(EnableRendering());
+	}
+	IEnumerator EnableRendering()
+	{
+		yield return new WaitUntil(() => isRenderingEnabled);
+
+        Debug.Log("Enable Rendering");
 
         SetTerrainShaderHeights();
         InstantiateTrees();
-		GenerateVillagesPositions(15, 15, 200);
+        GenerateVillagesPositions(15, 15, 200);
         //SpawnVillages(35);
-		//InstantiateBridges(bridgesCount);
-		grid = new PathfindingGrid(terrainPreset, simplification, waterMargin);
-		pathfinding = new PathFinding(grid);
-		GeneratePaths();
-		GeneratePathTextures();
-		CalculateGrassPositions();
+        //InstantiateBridges(bridgesCount);
+        pathfinding = new PathFinding(AStarPathfindingGrid.Instance);
+        GeneratePaths();
+        GeneratePathTextures();
+        CalculateGrassPositions();
 
-		navSurface.BuildNavMesh();
-		EventManager.OnChunkMeshesInstanced.Invoke();
-		areMeshesInstanced = true;
-	}
+        //navSurface.BuildNavMesh();
+        EventManager.OnChunkMeshesInstanced.Invoke();
+        areMeshesInstanced = true;
+    }
     void SetTerrainShaderHeights()
     {
         BiomePreset data = biomes[0];
@@ -296,9 +301,9 @@ public class ChunkMeshesInstancer : MonoBehaviour
 					for (int x = 0; x < terrainPreset.TerrainSize.x; x++)
 					{
 						Vector2Int position = new Vector2Int((int)(x * terrainPreset.ChunkSize - centerOffset.x), (int)(y * terrainPreset.ChunkSize - centerOffset.y));
-						for (float offsetY = 0.5f; offsetY <= grassChunkSizeModifier - 0.5f; offsetY += 1)
+						for (float offsetY = 0.5f; offsetY <= grassPreset.GrassChunkSizeModifier - 0.5f; offsetY += 1)
 						{
-							for (float offsetX = 0.5f; offsetX <= grassChunkSizeModifier - 0.5f; offsetX += 1)
+							for (float offsetX = 0.5f; offsetX <= grassPreset.GrassChunkSizeModifier - 0.5f; offsetX += 1)
 							{
 								float heightMapOffsetX = offsetX - 0.5f;
 								float heightMapOffsetY = offsetY - 0.5f;
@@ -430,7 +435,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
 							if (Physics.Raycast(ray, out hit))
 							{
-								if (hit.point.y < grassHeightThreshold) continue;
+								if (hit.point.y < grassPreset.GrassHeightThreshold) continue;
 								if (hit.transform.gameObject.layer != LayerMask.NameToLayer("Ground")) continue;
 
                                 Vector3 pos = new Vector3(rayPosition.x, hit.point.y, rayPosition.z);
@@ -582,7 +587,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 					sum += height;
 					amount++;
 
-					if (height <= grassHeightThreshold)
+					if (height <= grassPreset.GrassHeightThreshold)
 					{
 						avgHeight = sum / amount;
 						return false;
@@ -636,7 +641,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	}
 	void RenderAnimationTexture()
 	{
-		animationMapShader.SetFloat("_Time", Time.time * grassAnimationPreset.WindSpeed);
+		animationMapShader.SetFloat("_Time", Time.time * grassPreset.GrassAnimationPreset.WindSpeed);
 		animationMapShader.Dispatch(0, animationTextureResolution, animationTextureResolution, 1);
 	}
 	void RenderGrassMeshes()
@@ -648,7 +653,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		{
 			GrassData data = pair.Value;
 
-			if (Vector2.Distance(pair.Key, playerPos2D) < grassRenderDistance * grassChunkSizeRounded)
+			if (Vector2.Distance(pair.Key, playerPos2D) < grassPreset.GrassRenderDistance * grassChunkSizeRounded)
 			{
 				Graphics.DrawMeshInstancedIndirect(data.Mesh, 0, data.Material, data.Bounds, data.ArgsBuffer);
 			}

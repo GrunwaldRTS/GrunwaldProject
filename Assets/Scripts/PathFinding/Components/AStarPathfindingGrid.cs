@@ -1,12 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using AStarPathfinding;
+using Unity.VisualScripting;
 
-public class PathfindingGrid
+public class AStarPathfindingGrid : MonoBehaviour
 {
-    public ProceduralTerrainPreset TerrainPreset { get; private set; }
-	public int Simplification { get; private set; } = 0;
-	public int WaterMargin { get; private set; } = 5;
+	public static AStarPathfindingGrid Instance { get; private set; }
+
+	[SerializeField] PathfindingGridPreset preset;
     public Node[,] GridNodes { get; private set; }
 	int simplificationIncrement;
     int xNodesDimention, yNodesDimention;
@@ -14,28 +16,38 @@ public class PathfindingGrid
 	int penaltyMax = int.MinValue;
 	int penaltyMin = int.MaxValue;
 
-	public PathfindingGrid(ProceduralTerrainPreset terrainPreset, int simplification, int waterMargin)
-	{
-		TerrainPreset = terrainPreset;
-		Simplification = simplification;
-		WaterMargin = waterMargin;
+    private void Awake()
+    {
+		if (Instance != null)
+		{
+			Debug.LogError("Multiple AStarPathfindingGrid objects in scene");
+			Destroy(Instance.gameObject);
+		}
 
-        simplificationIncrement = (int)Mathf.Pow(2, simplification);
+		Instance = this;
 
-        xNodesDimention = terrainPreset.TerrainSize.x * terrainPreset.ChunkSize / simplificationIncrement;
-        yNodesDimention = terrainPreset.TerrainSize.y * terrainPreset.ChunkSize / simplificationIncrement;
+		Debug.Log("Assigned Instance");
 
-		Debug.Log($"nodesDimention x: {xNodesDimention}, y: {yNodesDimention}");
-	
-		PopulateNodes();
-	}
-	void PopulateNodes()
+        simplificationIncrement = (int)Mathf.Pow(2, preset.Simplification);
+
+        xNodesDimention = preset.TerrainPreset.TerrainSize.x * preset.TerrainPreset.ChunkSize / simplificationIncrement;
+        yNodesDimention = preset.TerrainPreset.TerrainSize.y * preset.TerrainPreset.ChunkSize / simplificationIncrement;
+
+        Debug.Log($"nodesDimention x: {xNodesDimention}, y: {yNodesDimention}");
+
+		EventManager.OnChunksGenerationCompleated.AddListener((kys1, kys2, kys3, kys4) => { PopulateNodes(); });
+    }
+    private void OnDisable()
+    {
+		Instance = null;
+    }
+    void PopulateNodes()
     {
 		GridNodes = new Node[xNodesDimention, yNodesDimention];
 
 		Vector2 centerOffset = new Vector2(
-			(TerrainPreset.TerrainSize.x * TerrainPreset.ChunkSize / 2f),
-			(TerrainPreset.TerrainSize.y * TerrainPreset.ChunkSize / 2f)
+			(preset.TerrainPreset.TerrainSize.x * preset.TerrainPreset.ChunkSize / 2f),
+			(preset.TerrainPreset.TerrainSize.y * preset.TerrainPreset.ChunkSize / 2f)
 		);
 		Debug.Log($"centerOffset: {centerOffset}");
 
@@ -47,10 +59,12 @@ public class PathfindingGrid
 				Vector3 worldPos = new(x * simplificationIncrement - centerOffset.x, 70, y * simplificationIncrement - centerOffset.y);
 				Ray ray = new Ray(new Vector3(worldPos.x + 0.5f, worldPos.y, worldPos.z + 0.5f), Vector3.down);
 
+				//Debug.DrawRay(ray.origin, ray.direction * 10f, Color.yellow, 1000f);
+
 				Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, LayerMask.GetMask("Ground"));
 				worldPos.y = hit.point.y;
 				//Debug.DrawRay(ray.origin, ray.direction * 1000f, Color.gray, 1000f);
-				bool walkable = hit.point.y >= TerrainPreset.WaterLevel + WaterMargin;
+				bool walkable = hit.point.y >= preset.TerrainPreset.WaterLevel + preset.WaterMargin;
 				int penalty = walkable ? 0 : 80;
 
 				GridNodes[x, y] = new Node(walkable, position, worldPos, penalty);
@@ -58,11 +72,15 @@ public class PathfindingGrid
 		}
 
 		BlurPenaltyMap(4);
+
+		Debug.Log("invoke");
+
+		EventManager.OnGeneratedPathfindingGrid.Invoke();
 	}
 	public int GetGridSize() => GridNodes.Length;
 	public Node GetNodeFromWorldPosition(Vector3 position)
 	{
-		Vector2 terrainSize = TerrainPreset.TerrainSize * TerrainPreset.ChunkSize;
+		Vector2 terrainSize = preset.TerrainPreset.TerrainSize * preset.TerrainPreset.ChunkSize;
 		Vector2 procent = new((position.x + (terrainSize.x / 2)) / terrainSize.x, (position.z + (terrainSize.x / 2)) / terrainSize.x);
 		Vector2Int pos = new(Mathf.RoundToInt(procent.x * xNodesDimention), Mathf.RoundToInt(procent.y * yNodesDimention));
 
@@ -149,13 +167,13 @@ public class PathfindingGrid
 	}
 	//private void OnDrawGizmos()
 	//{
-	//	//if (gridNodes != null)
-	//	//{
-	//	//	foreach (Node node in gridNodes)
-	//	//	{
-	//	//		Gizmos.color = node.Walkable ? Color.white : Color.red;
-	//	//		Gizmos.DrawWireCube(node.WorldPos + new Vector3(0.5f, 0, 0.5f), new Vector3(0.9f, /*Mathf.Lerp(1, 5, Mathf.InverseLerp(penaltyMin, penaltyMax, node.MovementPenalty))*/node.MovementPenalty, 0.9f));
-	//	//	}
-	//	//}
+	//	if (GridNodes != null)
+	//	{
+	//		foreach (Node node in GridNodes)
+	//		{
+	//			Gizmos.color = node.Walkable ? Color.white : Color.red;
+	//			Gizmos.DrawWireCube(node.WorldPos + new Vector3(0.5f, 0, 0.5f), new Vector3(0.9f, 0.9f, 0.9f));
+	//		}
+	//	}
 	//}
 }

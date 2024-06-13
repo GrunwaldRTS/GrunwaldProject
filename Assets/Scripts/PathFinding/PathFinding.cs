@@ -5,91 +5,94 @@ using UnityEngine;
 using System.Diagnostics;
 using Debug = UnityEngine.Debug;
 
-public class PathFinding
+namespace AStarPathfinding
 {
-	public PathfindingGrid Grid { get; private set; }
-	public Heap<Node> OpenNodes { get; private set; }
-	public HashSet<Node> ClosedNodes { get; private set; }
-    public PathFinding(PathfindingGrid grid)
-    {
-		Grid = grid;
-		OpenNodes = new(Grid.GetGridSize());
-		ClosedNodes = new();
-	}
-    public List<Node> FindPath(Vector2 startPos, Vector2 endPos)
+	public class PathFinding
 	{
-		return FindPath(new Vector3(startPos.x, 0, startPos.y), new Vector3(endPos.x, 0, endPos.y));
-	}
-    public List<Node> FindPath(Vector3 startPos, Vector3 endPos)
-	{
-		OpenNodes.Clear();
-		ClosedNodes.Clear();
-
-		Stopwatch stopwatch = Stopwatch.StartNew();
-		stopwatch.Start();
-
-		Node startNode = Grid.GetNodeFromWorldPosition(startPos);
-		Node endNode = Grid.GetNodeFromWorldPosition(endPos);
-
-		if (!startNode.Walkable || !endNode.Walkable)
+		public AStarPathfindingGrid Grid { get; private set; }
+		public Heap<Node> OpenNodes { get; private set; }
+		public HashSet<Node> ClosedNodes { get; private set; }
+		public PathFinding(AStarPathfindingGrid grid)
 		{
-			Debug.Log("Impossiblbe to create path: nodes are not walkable");
-			return new List<Node>();
+			Grid = grid;
+			OpenNodes = new(Grid.GetGridSize());
+			ClosedNodes = new();
 		}
-
-		Node currentNode = startNode;
-		OpenNodes.Add(startNode);
-
-		int i = 0;
-		while (OpenNodes.Count > 0)
+		public List<Node> FindPath(Vector2 startPos, Vector2 endPos)
 		{
-			currentNode = OpenNodes.RemoveFirst();
-			ClosedNodes.Add(currentNode);
+			return FindPath(new Vector3(startPos.x, 0, startPos.y), new Vector3(endPos.x, 0, endPos.y));
+		}
+		public List<Node> FindPath(Vector3 startPos, Vector3 endPos)
+		{
+			OpenNodes.Clear();
+			ClosedNodes.Clear();
 
-			if (currentNode == endNode) break;
+			Stopwatch stopwatch = Stopwatch.StartNew();
+			stopwatch.Start();
 
-			foreach (Node node in Grid.GetNeighborNodes(currentNode))
+			Node startNode = Grid.GetNodeFromWorldPosition(startPos);
+			Node endNode = Grid.GetNodeFromWorldPosition(endPos);
+
+			if (!startNode.Walkable || !endNode.Walkable)
 			{
-				if(!node.Walkable || ClosedNodes.Contains(node))
-				{	
-					continue;
-				}
-
-				int newMovementCostToNeighbour = currentNode.GCost + Node.Distance(currentNode, node) + node.MovementPenalty;
-				if (!OpenNodes.Contains(node) || newMovementCostToNeighbour < node.GCost)
-				{
-					node.GCost = newMovementCostToNeighbour;
-					node.HCost = Node.Distance(node, endNode);
-					node.Parent = currentNode;
-
-					if (!OpenNodes.Contains(node))
-					{
-						OpenNodes.Add(node);
-					}
-				}
+				Debug.Log("Impossiblbe to create path: nodes are not walkable");
+				return new List<Node>();
 			}
 
-			i++;
+			Node currentNode = startNode;
+			OpenNodes.Add(startNode);
+
+			int i = 0;
+			while (OpenNodes.Count > 0)
+			{
+				currentNode = OpenNodes.RemoveFirst();
+				ClosedNodes.Add(currentNode);
+
+				if (currentNode == endNode) break;
+
+				foreach (Node node in Grid.GetNeighborNodes(currentNode))
+				{
+					if (!node.Walkable || ClosedNodes.Contains(node))
+					{
+						continue;
+					}
+
+					int newMovementCostToNeighbour = currentNode.GCost + Node.Distance(currentNode, node) + node.MovementPenalty;
+					if (!OpenNodes.Contains(node) || newMovementCostToNeighbour < node.GCost)
+					{
+						node.GCost = newMovementCostToNeighbour;
+						node.HCost = Node.Distance(node, endNode);
+						node.Parent = currentNode;
+
+						if (!OpenNodes.Contains(node))
+						{
+							OpenNodes.Add(node);
+						}
+					}
+				}
+
+				i++;
+			}
+
+			stopwatch.Stop();
+			Debug.Log($"time elapsed: {stopwatch.ElapsedMilliseconds}ms");
+
+			return RetracePath(startNode, endNode);
 		}
-
-		stopwatch.Stop();
-		Debug.Log($"time elapsed: {stopwatch.ElapsedMilliseconds}ms");
-
-		return RetracePath(startNode, endNode);
-	}
-	static List<Node> RetracePath(Node startNode, Node endNode)
-	{
-		List<Node> path = new();
-		Node currentNode = endNode;
-
-		while(currentNode != startNode)
+		static List<Node> RetracePath(Node startNode, Node endNode)
 		{
-			path.Add(currentNode);
-			currentNode = currentNode.Parent;
-		}
+			List<Node> path = new();
+			Node currentNode = endNode;
 
-		path.Add(startNode);
-		path.Reverse();
-		return path;
+			while (currentNode != startNode)
+			{
+				path.Add(currentNode);
+				currentNode = currentNode.Parent;
+			}
+
+			path.Add(startNode);
+			path.Reverse();
+			return path;
+		}
 	}
 }
