@@ -6,27 +6,58 @@ using AStarPathfinding;
 using Debug = UnityEngine.Debug;
 using UnityEngine.Playables;
 using UnityEditor;
+using System;
 
 [RequireComponent(typeof(Transform))]
+[RequireComponent(typeof(Rigidbody))]
 [DisallowMultipleComponent]
 public class AStarPathfindingAgent : MonoBehaviour
 {
-    [SerializeField][Range(0, 1.5f)] float speed = 0.8f;
+    [SerializeField][Range(0, 1000f)] float speed = 600f;
     [SerializeField] Vector3 agentCeterOffset;
+    [SerializeField][Range(0, 10f)] float walkDirectlyToDestinationDistance = 1f;
+    public bool HasPath { get; private set; }
     public List<Node> CurrentPath { get; private set; }
     public Vector3 CurrentDestination { get; private set; }
     public Node CurrentDestinationNode { get; private set; }
 
+    public Action OnReachDestination;
+
     bool hasBeedPlaced;
+    bool isNextToTarget;
+
+    Vector3 currentNode;
+    int pathIndex;
+
     PathFinding pathfinding;
-    Coroutine tracePath;
+
+    Rigidbody rBody;
     private void Awake()
+    {
+        rBody = GetComponent<Rigidbody>();
+    }
+    private void Start()
+    {
+        if (AStarPathfindingGrid.Instance.IsGridGenerated)
+        {
+            Initialize();
+        }
+    }
+    private void OnEnable()
     {
         EventManager.OnGeneratedPathfindingGrid.AddListener(Initialize);
     }
+    private void OnDisable()
+    {
+        EventManager.OnGeneratedPathfindingGrid.RemoveListener(Initialize);
+    }
     void Initialize()
     {
+        Debug.Log("initialize");
+
         Node node = AStarPathfindingGrid.Instance.GetNodeFromWorldPosition(transform.position);
+
+        Debug.Log($"initialize: {node}");
 
         if (node is null) return;
 
@@ -35,6 +66,42 @@ public class AStarPathfindingAgent : MonoBehaviour
         transform.position = node.WorldPos + agentCeterOffset + new Vector3(0.5f, 0, 0.5f);
 
         pathfinding = new PathFinding(AStarPathfindingGrid.Instance);
+    }
+    private void Update()
+    {
+        if (!HasPath) return;
+
+        if (!isNextToTarget && Vector3.Distance(transform.position - agentCeterOffset, currentNode) < 1.5f)
+        {
+            pathIndex++;
+
+            currentNode = CurrentPath[pathIndex].WorldPos;
+        }
+
+        if (Vector3.Distance(transform.position, CurrentDestination) < walkDirectlyToDestinationDistance)
+        {
+            currentNode = CurrentDestination;
+
+            isNextToTarget = true;
+        }
+
+        if (Vector3.Distance(transform.position - agentCeterOffset, CurrentDestination) < 0.1f)
+        {
+            Debug.Log("At destination");
+
+            ResetDestination();
+
+            OnReachDestination();
+
+            return;
+        }
+    }
+    private void FixedUpdate()
+    {
+        if (!HasPath) return;
+
+        Vector3 posToDest = (currentNode - (transform.position - agentCeterOffset)).normalized;
+        rBody.AddForce(speed * posToDest);
     }
     public List<Node> FindPath(Vector2 startPos, Vector2 endPos)
     {
@@ -58,64 +125,29 @@ public class AStarPathfindingAgent : MonoBehaviour
         CurrentDestinationNode = AStarPathfindingGrid.Instance.GetNodeFromWorldPosition(destination);
         CurrentPath = pathfinding.FindPath(transform.position, destination);
 
-        tracePath = StartCoroutine(TracePath());
-    }
-    public void ResetDestination()
-    {
-        if (tracePath is not null) StopCoroutine(tracePath);
-        ResetState();
-    }
-    void ResetState()
-    {
-        CurrentPath = null;
-        CurrentDestination = Vector3.zero;
-        CurrentDestinationNode = null;
-    }
-    float InverseLerp(Vector3 a, Vector3 b, Vector3 value)
-    {
-        Vector3 AB = b - a;
-        Vector3 AV = value - a;
-        return Mathf.Clamp01(Vector3.Dot(AV, AB) / Vector3.Dot(AB, AB));
-    }
-    IEnumerator TracePath()
-    {
-        int index = 0;
-        Vector3 currentNode = transform.position - agentCeterOffset;
-        Vector3 nextNode = CurrentPath[index + 1].WorldPos;
+        Debug.Log(CurrentPath.Count);
 
-        foreach(Node node in CurrentPath)
+        Debug.DrawRay(transform.position, Vector3.up * 10f, Color.yellow, 1000f);
+        Debug.DrawRay(destination, Vector3.up * 10f, Color.blue, 1000f);
+
+        Debug.Log(pathIndex);
+
+        currentNode = CurrentPath[pathIndex++].WorldPos;
+        foreach (Node node in CurrentPath)
         {
             Debug.DrawRay(node.WorldPos, Vector3.up * 10f, Color.red, 1000f);
         }
 
-        while (true)
-        {
-            float t = InverseLerp(currentNode, nextNode, transform.position - agentCeterOffset);
-
-            //Debug.Log(t);
-
-            if (t == 1)
-            {
-                index++;
-
-                if (index == CurrentPath.Count - 1)
-                {
-                    ResetDestination();
-                    yield break;
-                }
-
-                currentNode = CurrentPath[index].WorldPos;
-                nextNode = CurrentPath[index + 1].WorldPos;
-
-                transform.position = currentNode + agentCeterOffset;
-
-                t = 0;
-            }
-
-            Vector3 nextPosition = Vector3.Lerp(currentNode, nextNode, t + speed * Time.deltaTime);
-            transform.position = nextPosition + agentCeterOffset;
-
-            yield return null;
-        }
+        HasPath = true;
+    }
+    public void ResetDestination()
+    {
+        HasPath = false;
+        isNextToTarget = false;
+        CurrentPath = null;
+        currentNode = Vector3.zero;
+        pathIndex = 0;
+        CurrentDestination = Vector3.zero;
+        CurrentDestinationNode = null;
     }
 }

@@ -9,6 +9,7 @@ public class AStarPathfindingGrid : MonoBehaviour
 	public static AStarPathfindingGrid Instance { get; private set; }
 
 	[SerializeField] PathfindingGridPreset preset;
+    public bool IsGridGenerated { get; private set; }
     public Node[,] GridNodes { get; private set; }
 	int simplificationIncrement;
     int xNodesDimention, yNodesDimention;
@@ -74,6 +75,8 @@ public class AStarPathfindingGrid : MonoBehaviour
 		BlurPenaltyMap(4);
 
 		Debug.Log("invoke");
+
+		IsGridGenerated = true;
 
 		EventManager.OnGeneratedPathfindingGrid.Invoke();
 	}

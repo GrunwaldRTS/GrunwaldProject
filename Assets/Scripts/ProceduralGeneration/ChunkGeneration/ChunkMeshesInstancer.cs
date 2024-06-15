@@ -82,17 +82,19 @@ public class ChunkMeshesInstancer : MonoBehaviour
 		cullGrassUnderWaterShader = Resources.Load<ComputeShader>("CullGrassUnderWaterShader");
 		pathTextureShader = Resources.Load<ComputeShader>("PathTextureShader");		
 	}
-	private void Start()
+    private void OnEnable()
+    {
+        EventManager.OnChunksGenerationCompleated.AddListener(AssignDependencies);
+        EventManager.OnGeneratedPathfindingGrid.AddListener(() => { isRenderingEnabled = true; });
+        EventManager.OnPathPresetValidate.AddListener(GeneratePathTextures);
+    }
+    private void Start()
 	{
 		terrainSize = terrainPreset.TerrainSize * terrainPreset.ChunkSize;
 
 		CalculateGrassData();
         InitializeComputeShaders();
 		InitializeComputeBuffers();
-
-        EventManager.OnChunksGenerationCompleated.AddListener(AssignDependencies);
-        EventManager.OnGeneratedPathfindingGrid.AddListener(() => { isRenderingEnabled = true; });
-        EventManager.OnPathPresetValidate.AddListener(GeneratePathTextures);
 	}
 	void CalculateGrassData()
 	{
@@ -694,6 +696,10 @@ public class ChunkMeshesInstancer : MonoBehaviour
 
         heightsBuffer.Release();
         heightsBuffer = null;
+
+        EventManager.OnChunksGenerationCompleated.RemoveListener(AssignDependencies);
+        EventManager.OnGeneratedPathfindingGrid.RemoveListener(() => { isRenderingEnabled = true; });
+        EventManager.OnPathPresetValidate.RemoveListener(GeneratePathTextures);
     }
 	void FreePathTextures()
 	{

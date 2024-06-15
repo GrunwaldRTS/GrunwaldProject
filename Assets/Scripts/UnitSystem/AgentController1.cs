@@ -10,7 +10,7 @@ public class AgentController1 : NetworkBehaviour
     [SerializeField] GameObject Tomb;
     [SerializeField] GameObject weapon;
 
-    public NavMeshAgent Agent { get; private set; }
+    public AStarPathfindingAgent Agent { get; private set; }
     public bool FinishedPath { get; private set; } = false;
     public float Health { get; set; } = 100;
     public bool AttackTaskStop { get; set; } = false;
@@ -32,56 +32,34 @@ public class AgentController1 : NetworkBehaviour
     Quaternion rotation = Quaternion.identity;
     BetterNetworkTransform networkTransform;
 
-    //public override void OnNetworkSpawn()
-    //{
-    //    if (IsServer)
-    //    {
-    //        GetComponent<NetworkObject>().ChangeOwnership(transform.parent.parent.gameObject.GetComponent<NetworkObject>().OwnerClientId);
-    //    }
-    //}
     #region internal
-    private void Start()
+    private void Awake()
     {
         networkTransform = GetComponent<BetterNetworkTransform>();
-        warriorRenderer = transform.gameObject.GetComponent<Renderer>();
-        warriorColider = transform.gameObject.GetComponent<CapsuleCollider>();
+        warriorRenderer = GetComponent<Renderer>();
+        warriorColider = GetComponent<CapsuleCollider>();
         //band = transform.parent.gameObject;
         weaponAnimator = weapon.GetComponent<Animator>();
+
+        Agent = GetComponent<AStarPathfindingAgent>();
+    }
+    private void OnEnable()
+    {
+        Agent.OnReachDestination += OnDestinationReached;
+    }
+    private void OnDisable()
+    {
+        Agent.OnReachDestination -= OnDestinationReached;
     }
     private void Update()
     {
-        AssignNavMeshAgent();
-
         if (!IsOwner && !IsServer) return;
 
-        if (Agent.remainingDistance <= Agent.stoppingDistance && !Agent.pathPending && gotUpdated)
-        {
-            OnDestinationReached();
-        }
         if (Health <= 0 && isAlive)
         {
             warriorFallen();
         }
     }
-    void AssignNavMeshAgent()
-    {
-        if (Agent != null) return;
-
-        Agent = GetComponent<NavMeshAgent>();
-        Agent.enabled = false;
-
-        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-        {
-            //Debug.Log(hit.position);
-            Agent.Warp(hit.position);
-            Agent.enabled = true;
-        }
-    }
-    //public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
-    //{
-    //    if (!IsServer) return;
-    //    transform.parent = parentNetworkObject.transform;
-    //}
     private void OnDestinationReached()
     {
         Rotate(rotation);
@@ -208,7 +186,7 @@ public class AgentController1 : NetworkBehaviour
             }
             else
             {
-                Agent.ResetPath();
+                Agent.ResetDestination();
                 if (GetDotProduct(transform.gameObject, warriorToAttack) < 1f)
                 {
                     Rotate(warriorToAttack.transform.position);

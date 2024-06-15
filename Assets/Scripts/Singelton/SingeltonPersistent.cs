@@ -19,7 +19,7 @@ public abstract class SingeltonPersistant<T> : MonoBehaviour where T : Component
             return _instance;
         }
     }
-
+    
     public virtual void OnDestroy()
     {
         if (_instance == this)

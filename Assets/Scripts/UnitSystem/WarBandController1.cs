@@ -198,14 +198,14 @@ public class WarBandController1 : NetworkBehaviour
 
 		if (!IsOwner && !IsServer) return;
 
-		if (InputManager.Instance.GetMoveDown())
-		{
-			foreach(GameObject warrior in warriors)
-			{
-				NavMeshAgent agent = warrior.GetComponent<NavMeshAgent>();
-				agent.Warp(warrior.transform.position + warrior.transform.forward * 2f);
-			}
-		}
+		//if (InputManager.Instance.GetMoveDown())
+		//{
+		//	foreach(GameObject warrior in warriors)
+		//	{
+		//		NavMeshAgent agent = warrior.GetComponent<NavMeshAgent>();
+		//		agent.Warp(warrior.transform.position + warrior.transform.forward * 2f);
+		//	}
+		//}
 
 
 		if (!IsMarching() && destinationQueue.Count > 0)

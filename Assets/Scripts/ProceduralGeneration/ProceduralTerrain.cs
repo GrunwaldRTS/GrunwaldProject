@@ -15,22 +15,27 @@ public class ProceduralTerrain : MonoBehaviour
 
 	int chunksLoaded = 0;
 	bool areChunksLoaded;
-	
+
 	void Start()
 	{
-		Application.targetFrameRate = 240;
-
 		chunkDataProvider = new ChunkDataProvider(
 			new NoiseInputData(preset.TerrainSize, preset.ChunkSize + 1, preset.LevelOfDetail, preset.HeightMultiplier, preset.NoiseInfo),
 			new MeshInputData(preset.ChunkSize, preset.LevelOfDetail, new float[0, 0], preset.HeightMultiplier),
 			gameObject
 		);
 
-		EventManager.OnChunkGenerationCompleated.AddListener(OnChunkLoaded);
-		EventManager.OnChunkMeshesInstanced.AddListener(MakeChunksInvisible);
-
 		GenerateChunks();
 	}
+    private void OnEnable()
+    {
+        EventManager.OnChunkGenerationCompleated.AddListener(OnChunkLoaded);
+        EventManager.OnChunkMeshesInstanced.AddListener(MakeChunksInvisible);
+    }
+    private void OnDisable()
+    {
+        EventManager.OnChunkGenerationCompleated.RemoveListener(OnChunkLoaded);
+        EventManager.OnChunkMeshesInstanced.RemoveListener(MakeChunksInvisible);
+    }
     void MakeChunksInvisible()
     {
         areChunksLoaded = true;
