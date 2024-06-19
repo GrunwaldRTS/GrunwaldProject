@@ -15,7 +15,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Random = UnityEngine.Random;
 
-public class LobbyManager : Singelton<LobbyManager>
+public class LobbyManager : SingeltonPersistant<LobbyManager>
 {
     public string PlayerId { get; private set; }
     public string PlayerName { get; private set; }
@@ -24,12 +24,18 @@ public class LobbyManager : Singelton<LobbyManager>
 
     const string KEY_START_GAME = "StartGame_RelayCode";
 
-    private void Awake()
+    public override void Awake()
     {
+        base.Awake();
+
         PlayerName = $"Player{Random.Range(0, 100)}";
 
         Authenticate(PlayerName);
         
+    }
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
     }
     private void Start()
     {
@@ -92,6 +98,7 @@ public class LobbyManager : Singelton<LobbyManager>
             JoinedLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
             Debug.Log(JoinedLobby.HostId);
             Debug.Log($"Created lobby with data: {JoinedLobby.Name} {JoinedLobby.MaxPlayers} {JoinedLobby.IsPrivate} {JoinedLobby.LobbyCode}");
+            Debug.Log("Create lobby invoke");
             EventManager.OnJoinedLobby.Invoke();
 
             StartCoroutine(HandleLobbyHartBeat());
@@ -177,12 +184,8 @@ public class LobbyManager : Singelton<LobbyManager>
                         {
                             if (!IsLobbyHost())
                             {
-                                Debug.Log("Started Game");
-                                SceneManager.LoadScene("TestProceduralGenerationScene");
-                                RelayManager.Instance.JoinRelay(JoinedLobby.Data[KEY_START_GAME].Value);
+                                JoinGame();
                             }
-
-                            StopAllCoroutines();
                         }
                     }
                 }
@@ -190,6 +193,13 @@ public class LobbyManager : Singelton<LobbyManager>
 
             yield return new WaitForSeconds(1.5f);
         }
+    }
+    void JoinGame()
+    {
+        StopAllCoroutines();
+
+        Debug.Log("Started Game");
+        RelayManager.Instance.JoinRelay(JoinedLobby.Data[KEY_START_GAME].Value);
     }
     private async Task<List<Lobby>> GetLobbies()
     {
@@ -236,7 +246,7 @@ public class LobbyManager : Singelton<LobbyManager>
 
             JoinedLobby = await Lobbies.Instance.JoinLobbyByIdAsync(lobbyId, options);
             Debug.Log($"Joined lobby with lobby id: {lobbyId}");
-
+            Debug.Log("Join lobby by id invoke");
             EventManager.OnJoinedLobby.Invoke();
         }
         catch (LobbyServiceException e)
@@ -262,6 +272,7 @@ public class LobbyManager : Singelton<LobbyManager>
             JoinedLobby = await Lobbies.Instance.JoinLobbyByCodeAsync(lobbyCode, options);
             Debug.Log($"Joined lobby with lobby code: {lobbyCode}");
 
+            Debug.Log("Join lobby by code invoke");
             EventManager.OnJoinedLobby.Invoke();
         }
         catch (LobbyServiceException e)
@@ -333,26 +344,14 @@ public class LobbyManager : Singelton<LobbyManager>
 
         return lobbyToDelete.HostId == AuthenticationService.Instance.PlayerId;
     }
-    public IEnumerator StartGame()
+    public async void StartGame()
     {
-        if (JoinedLobby is null) yield break;
-        if (!IsLobbyHost()) yield break;
+        if (JoinedLobby is null) return;
+        if (!IsLobbyHost()) return;
 
-        AsyncOperation loadSceneTask = SceneManager.LoadSceneAsync("TestProceduralGenerationScene", LoadSceneMode.Additive);
-        while (!loadSceneTask.isDone)
-        {
-            yield return null;
-        }
-
-        SceneManager.SetActiveScene(SceneManager.GetSceneByName("TestProceduralGenerationScene"));
-
-        yield return null;
-
-        StartRelay();
-    }
-    async void StartRelay()
-    {
         string relayCode = await RelayManager.Instance.CreateRelay(JoinedLobby.MaxPlayers - 1);
+
+        NetworkManager.Singleton.SceneManager.LoadScene("TestProceduralGenerationScene", LoadSceneMode.Single);
 
         UpdateLobbyOptions options = new UpdateLobbyOptions
         {

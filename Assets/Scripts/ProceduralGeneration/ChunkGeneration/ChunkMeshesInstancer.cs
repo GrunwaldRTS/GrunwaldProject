@@ -14,6 +14,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	[SerializeField] GameObject bridgePrefab;
 	[SerializeField][Range(1, 6)] int bridgesCount = 3;
 	[Header("Grass")]
+	[SerializeField] bool generateGrass;
 	[SerializeField] GrassPreset grassPreset;
     [Header("TrailsGeneration")]
     [SerializeField] PathGenerationPreset pathGenerationPreset;
@@ -182,9 +183,10 @@ public class ChunkMeshesInstancer : MonoBehaviour
         pathfinding = new PathFinding(AStarPathfindingGrid.Instance);
         GeneratePaths();
         GeneratePathTextures();
-        CalculateGrassPositions();
+		if (generateGrass) CalculateGrassPositions();
 
-        //navSurface.BuildNavMesh();
+		//navSurface.BuildNavMesh();
+		Debug.Log("Instanced chunk meshes invoke");
         EventManager.OnChunkMeshesInstanced.Invoke();
         areMeshesInstanced = true;
     }
@@ -637,6 +639,7 @@ public class ChunkMeshesInstancer : MonoBehaviour
 	private void Update()
 	{
 		if (!areMeshesInstanced) return;
+		if (!generateGrass) return;
 
 		RenderAnimationTexture();
 		RenderGrassMeshes();

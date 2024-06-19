@@ -71,7 +71,7 @@ public class LobbyPage : MonoBehaviour
         startGameButton.clicked += () =>
         {
             Debug.Log("Start game");
-            StartCoroutine(LobbyManager.Instance.StartGame());
+            LobbyManager.Instance.StartGame();
         };
         leaveLobbyButton.clicked += () =>
     {

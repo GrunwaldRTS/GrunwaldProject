@@ -17,18 +17,21 @@ public class SwitchLobbyUiDocuments : MonoBehaviour
 
     void EnableLobbiesPage()
     {
+        Debug.Log("Enable lobbies page");
         lobbyPage.DisablePage();
         lobbiesPage.EnablePage();
     }
 
     void EnableLobbyPage()
     {
+        Debug.Log("Enable lobby page");
         lobbiesPage.DisablePage();
         lobbyPage.EnablePage();
     }
 
     void DisableLobbyUI()
     {
+        Debug.Log("Disable lobby UI");
         lobbiesPage.DisablePage();
         lobbyPage.DisablePage();
     }

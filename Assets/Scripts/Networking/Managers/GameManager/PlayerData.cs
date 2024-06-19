@@ -3,7 +3,7 @@ using UnityEngine;
 using Unity.Netcode;
 
 [Serializable]
-public struct PlayerData : INetworkSerializable
+public struct PlayerData : INetworkSerializable, IEquatable<PlayerData>
 {
     public int Wood;
     public int Steel;
@@ -14,6 +14,12 @@ public struct PlayerData : INetworkSerializable
         Steel = steel;
         Food = food;
     }
+
+    public bool Equals(PlayerData other)
+    {
+        return Wood == other.Wood && Steel == other.Steel && Food == other.Food;
+    }
+
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
         serializer.SerializeValue(ref Wood);

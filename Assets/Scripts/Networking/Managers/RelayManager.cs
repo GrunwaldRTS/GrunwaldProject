@@ -9,9 +9,17 @@ using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
 
-public class RelayManager : Singelton<RelayManager>
+public class RelayManager : SingeltonPersistant<RelayManager>
 {
     public string JoinCode { get; private set; }
+    public override void Awake()
+    {
+        base.Awake();
+    }
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+    }
     public async Task<string> CreateRelay(int maxPlayers)
     {
         try

@@ -27,8 +27,6 @@ public class AStarPathfindingGrid : MonoBehaviour
 
 		Instance = this;
 
-		Debug.Log("Assigned Instance");
-
         simplificationIncrement = (int)Mathf.Pow(2, preset.Simplification);
 
         xNodesDimention = preset.TerrainPreset.TerrainSize.x * preset.TerrainPreset.ChunkSize / simplificationIncrement;

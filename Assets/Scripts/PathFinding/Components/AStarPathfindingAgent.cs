@@ -53,11 +53,7 @@ public class AStarPathfindingAgent : MonoBehaviour
     }
     void Initialize()
     {
-        Debug.Log("initialize");
-
         Node node = AStarPathfindingGrid.Instance.GetNodeFromWorldPosition(transform.position);
-
-        Debug.Log($"initialize: {node}");
 
         if (node is null) return;
 
@@ -124,13 +120,6 @@ public class AStarPathfindingAgent : MonoBehaviour
         CurrentDestination = destination;
         CurrentDestinationNode = AStarPathfindingGrid.Instance.GetNodeFromWorldPosition(destination);
         CurrentPath = pathfinding.FindPath(transform.position, destination);
-
-        Debug.Log(CurrentPath.Count);
-
-        Debug.DrawRay(transform.position, Vector3.up * 10f, Color.yellow, 1000f);
-        Debug.DrawRay(destination, Vector3.up * 10f, Color.blue, 1000f);
-
-        Debug.Log(pathIndex);
 
         currentNode = CurrentPath[pathIndex++].WorldPos;
         foreach (Node node in CurrentPath)

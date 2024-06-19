@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _grassHeightThreshold: 13.5
   _grassChunkSizeModifier: 8
-  _density: 2
+  _density: 1
   _grassAnimationPreset: {fileID: 11400000, guid: f28918bb0030ba54e9c7cb71ed3c9038,
     type: 2}
-  _grassRenderDistance: 7
+  _grassRenderDistance: 4
